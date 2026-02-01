@@ -5,7 +5,8 @@
 # libraries using Flutter Rust Bridge with full CI/CD support.
 #
 # Usage:
-#   copier copy https://github.com/djx-y-z/copier-dart-frb-wrapper my_package
+#   mkdir my_package && cd my_package
+#   copier copy https://github.com/djx-y-z/copier-dart-frb-wrapper .
 #
 # Requirements:
 #   pip install copier jinja2-strcase
@@ -228,32 +229,32 @@ _tasks:
       flutter create example
       --platforms=android,ios,linux,macos,windows{% if enable_web %},web{% endif %}
       --project-name {{ package_name }}_example
-    working_directory: "{{ _copier_conf.dst_path }}/{{ package_name }}"
+    working_directory: "{{ _copier_conf.dst_path }}"
 
   # Copy template files to example
   - command: >-
       cp _templates/example_pubspec.yaml example/pubspec.yaml &&
       cp _templates/example_main.dart example/lib/main.dart
-    working_directory: "{{ _copier_conf.dst_path }}/{{ package_name }}"
+    working_directory: "{{ _copier_conf.dst_path }}"
 
   # Create CLI example app
   - command: dart create -t console example_cli --force
-    working_directory: "{{ _copier_conf.dst_path }}/{{ package_name }}"
+    working_directory: "{{ _copier_conf.dst_path }}"
 
   # Copy template files to example_cli and cleanup
   - command: >-
       cp _templates/example_cli_pubspec.yaml example_cli/pubspec.yaml &&
       cp _templates/example_cli_main.dart example_cli/bin/{{ package_name }}_cli.dart &&
       rm -f example_cli/bin/example_cli.dart
-    working_directory: "{{ _copier_conf.dst_path }}/{{ package_name }}"
+    working_directory: "{{ _copier_conf.dst_path }}"
 
   # Remove _templates directory
   - command: rm -rf _templates
-    working_directory: "{{ _copier_conf.dst_path }}/{{ package_name }}"
+    working_directory: "{{ _copier_conf.dst_path }}"
 
   # Remove Claude files when enable_claude is false
   - command: rm -rf CLAUDE.md .claude
-    working_directory: "{{ _copier_conf.dst_path }}/{{ package_name }}"
+    working_directory: "{{ _copier_conf.dst_path }}"
     when: "{{ not enable_claude }}"
 
 # =============================================================================
@@ -270,8 +271,8 @@ _message_after_copy: |
 
   Next steps:
 
-  1. Navigate to your package directory:
-     cd {{ _copier_conf.dst_path }}/{{ package_name }}
+  1. Your package is ready at:
+     {{ _copier_conf.dst_path }}
 
   2. Add native library license:
      Copy the license file from the native library to:

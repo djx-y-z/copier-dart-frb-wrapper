@@ -79,10 +79,10 @@ jobs:
           pip install copier jinja2-strcase
 
           # Create new project
-          copier copy --vcs-ref=v${{ steps.version.outputs.version }} https://github.com/${{ github.repository }} my_project
+          mkdir my_project && cd my_project
+          copier copy --vcs-ref=v${{ steps.version.outputs.version }} https://github.com/${{ github.repository }} .
 
-          # Update existing project
-          cd my_project
+          # Update existing project (must have .copier-answers.yml)
           copier update --vcs-ref=v${{ steps.version.outputs.version }}
           ```
           EOF

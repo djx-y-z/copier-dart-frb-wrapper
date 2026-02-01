@@ -50,7 +50,8 @@ pipx inject copier jinja2-strcase
 ### Create a new project
 
 ```bash
-copier copy https://github.com/djx-y-z/copier-dart-frb-wrapper my_package
+mkdir my_package && cd my_package
+copier copy https://github.com/djx-y-z/copier-dart-frb-wrapper .
 ```
 
 ### Update an existing project
@@ -63,7 +64,8 @@ copier update
 ### Example with all parameters
 
 ```bash
-copier copy https://github.com/djx-y-z/copier-dart-frb-wrapper my_package \
+mkdir my_signal_lib && cd my_signal_lib
+copier copy https://github.com/djx-y-z/copier-dart-frb-wrapper . \
   --data package_name=my_signal_lib \
   --data description="Dart bindings for Signal Protocol" \
   --data native_library_name=signal \
@@ -89,7 +91,8 @@ copier copy https://github.com/djx-y-z/copier-dart-frb-wrapper my_package \
 ### Minimal example (uses defaults)
 
 ```bash
-copier copy https://github.com/djx-y-z/copier-dart-frb-wrapper my_package \
+mkdir my_lib && cd my_lib
+copier copy https://github.com/djx-y-z/copier-dart-frb-wrapper . \
   --trust \
   --defaults \
   --data package_name=my_lib \

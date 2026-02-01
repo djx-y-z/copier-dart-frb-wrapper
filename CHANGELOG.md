@@ -1,3 +1,18 @@
+## [1.2.0] - 2026-02-01
+
+### Changed
+
+- **BREAKING: Flat template structure** - Template no longer creates a `{{ package_name }}/` subdirectory
+  - Files are now generated directly in the destination directory
+  - Enables proper `copier update` support for existing projects
+  - New usage: `mkdir my_package && cd my_package && copier copy <template> .`
+- Updated `_tasks` working directories to use `{{ _copier_conf.dst_path }}` directly
+- Updated post-copy message with new workflow instructions
+
+### Fixed
+
+- `copier update` now works correctly for existing projects
+
 ## [1.1.0] - 2026-02-01
 
 ### Added
@@ -66,6 +81,7 @@
 - Security policy template
 - Git hooks for pre-commit checks
 
-[Unreleased]: https://github.com/djx-y-z/copier-dart-frb-wrapper/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/djx-y-z/copier-dart-frb-wrapper/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/djx-y-z/copier-dart-frb-wrapper/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/djx-y-z/copier-dart-frb-wrapper/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/djx-y-z/copier-dart-frb-wrapper/releases/tag/v1.0.0
