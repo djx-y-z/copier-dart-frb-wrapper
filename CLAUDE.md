@@ -10,6 +10,7 @@ This project includes Claude Skills to help with common tasks:
 
 | Skill | Description |
 |-------|-------------|
+| `create-project` | Generate new project from template (local or GitHub) |
 | `test-template` | Test template with different configurations |
 | `add-variable` | Add new variables to copier.yml |
 | `jinja-syntax` | Jinja2 syntax reference |
