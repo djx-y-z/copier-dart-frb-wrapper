@@ -238,6 +238,10 @@ topics:
 # POST-GENERATION TASKS
 # =============================================================================
 _tasks:
+  # Initialize git repository
+  - command: git init
+    working_directory: "{{ _copier_conf.dst_path }}"
+
   # Create Flutter example app
   - command: >-
       flutter create example
@@ -271,6 +275,10 @@ _tasks:
       rm -f example_cli/bin/example_cli.dart &&
       rm -rf example_cli/test example_cli/lib
     working_directory: "{{ _copier_conf.dst_path }}"
+
+  # Get dependencies for example_cli (after pubspec.yaml replacement)
+  - command: dart pub get
+    working_directory: "{{ _copier_conf.dst_path }}/example_cli"
 
   # Remove _templates directory
   - command: rm -rf _templates

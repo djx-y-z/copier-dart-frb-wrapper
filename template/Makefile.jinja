@@ -106,7 +106,7 @@ setup-fvm:
 	dart pub global activate fvm
 	@echo ""
 	@echo "Installing project Flutter version..."
-	$(FVM) use --force
+	$(FVM) use $$(dart scripts/get_flutter_version.dart) --force
 	@echo ""
 	@echo "Getting dependencies..."
 	@touch .skip_{{ package_name }}_hook

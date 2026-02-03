@@ -1,3 +1,19 @@
+## [1.3.2] - 2026-02-03
+
+### Added
+
+- **get_flutter_version.dart script** — new cross-platform script to read Flutter version from `.fvmrc`
+
+### Changed
+
+- **FVM setup reads version from .fvmrc** — Makefile now uses `dart scripts/get_flutter_version.dart` instead of hardcoded version, making it easier to update Flutter version in one place
+- **Git repository initialized on project creation** — added `git init` task to copier post-generation
+- **example_cli dependencies** — added `dart pub get` task after pubspec.yaml replacement to ensure dependencies are resolved
+
+### Fixed
+
+- **Unused import in widget test** — removed `package:flutter/material.dart` import from `example_widget_test.dart.jinja`
+
 ## [1.3.1] - 2026-02-03
 
 ### Added
