@@ -1,4 +1,4 @@
-## [Unreleased]
+## [1.7.0] - 2026-02-05
 
 ### Added
 
@@ -9,6 +9,7 @@
 
 ### Changed
 
+- Renamed Claude skill `ffi-patterns` → `frb-patterns` to match Flutter Rust Bridge architecture
 - Removed unused `GITHUB_TOKEN` from `check_updates.dart` (not needed for public GitHub API with 1 req/day)
 
 ## [1.6.0] - 2026-02-05
