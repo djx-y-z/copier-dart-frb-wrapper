@@ -1,3 +1,16 @@
+## [Unreleased]
+
+### Added
+
+- **`check-template-updates.yml` workflow** — daily CI check for new copier template versions with automated notification PR containing version comparison, changelog, and update instructions
+- **`check_template_updates.dart` script** — checks `.copier-answers.yml` against latest template release, supports `--json`, `--ci-output`, `--version`, `--force` flags
+- **`make check-template-updates` target** — Makefile command for template version checking
+- **`update-template` Claude skill** — step-by-step guide for reviewing automated PRs, running `copier update`, resolving conflicts, and quality checks
+
+### Changed
+
+- Removed unused `GITHUB_TOKEN` from `check_updates.dart` (not needed for public GitHub API with 1 req/day)
+
 ## [1.6.0] - 2026-02-05
 
 ### Added

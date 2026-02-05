@@ -150,6 +150,9 @@ make build-web
 # Check for new {{ native_library_name }} versions
 make check-new-{{ package_name }}-version
 
+# Check for new copier template versions
+make check-template-updates
+
 # Update Cargo.lock dependencies
 make rust-update
 
@@ -162,6 +165,8 @@ The CI automatically checks for new {{ native_library_name }} releases daily and
 - Updated `Cargo.lock` (if successful)
 - Regenerated FRB bindings (if successful)
 - AI-generated CHANGELOG entry (if `AI_MODELS_TOKEN` secret is configured)
+
+It also checks for copier template updates daily and creates notification PRs with changelog and update instructions.
 
 ## Architecture
 
