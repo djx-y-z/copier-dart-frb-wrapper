@@ -1,3 +1,10 @@
+## [1.7.1] - 2026-02-05
+
+### Added
+
+- **`update-template` Claude skill** — step-by-step guide for reviewing automated PRs, running `copier update`, resolving conflicts, and quality checks
+  - Documents `--defaults` flag for non-interactive `copier update` (required for Claude Code)
+
 ## [1.7.0] - 2026-02-05
 
 ### Added
@@ -6,6 +13,7 @@
 - **`check_template_updates.dart` script** — checks `.copier-answers.yml` against latest template release, supports `--json`, `--ci-output`, `--version`, `--force` flags
 - **`make check-template-updates` target** — Makefile command for template version checking
 - **`update-template` Claude skill** — step-by-step guide for reviewing automated PRs, running `copier update`, resolving conflicts, and quality checks
+  - Documents `--defaults` flag for non-interactive `copier update` (required for Claude Code)
 
 ### Changed
 
