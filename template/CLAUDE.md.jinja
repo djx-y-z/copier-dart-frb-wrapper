@@ -17,37 +17,20 @@ flutter_rust_bridge_codegen generate
 make build --target aarch64-apple-darwin  # make interprets --target as its own flag!
 ```
 
-## Quick Reference
-
-| Task | Command |
-|------|---------|
-| Initial setup | `make setup` |
-| Show all commands | `make help` |
-| Generate Dart bindings | `make codegen` |
-| Build Rust library | `make build` |
-| Build for Android | `make build-android` |
-{% if enable_web %}| Build for Web (WASM) | `make build-web` |
-{% endif %}| Run tests | `make test` |
-| Run tests with coverage | `make coverage` |
-| Run analysis | `make analyze` |
-| Strict analysis | `make analyze ARGS="--fatal-infos"` |
-| Format code | `make format` |
-| Generate documentation | `make doc` |
-| Check Rust code | `make rust-check` |
-| Audit Rust dependencies | `make rust-audit` |
-| Get dependencies | `make get` |
-| Show crate version | `make version` |
-| Update Cargo.lock | `make rust-update` |
-| Check template updates | `make check-template-updates` |
-| Update CHANGELOG with AI | `make update-changelog ARGS="--version v1.0.0"` |
-
 ## Available Makefile Commands
 
 ### Setup
 ```bash
-make setup                        # Full setup (FVM + Rust tools)
+make setup                        # Full setup (FVM + Rust tools{% if enable_protoc %} + protoc{% endif %})
 make setup-fvm                    # Install FVM + Flutter only
 make setup-rust-tools             # Install Rust tools (cargo-audit, frb_codegen)
+{%- if enable_protoc %}
+make setup-protoc                 # Install protoc (Protocol Buffers compiler)
+{%- endif %}
+{%- if enable_web %}
+make setup-web                    # Install web build tools (wasm-pack)
+{%- endif %}
+make setup-android                # Install Android build tools (cargo-ndk)
 ```
 
 ### Code Generation
@@ -64,8 +47,9 @@ make build ARGS="--release"             # Build for current platform (release)
 make build ARGS="--target <target>"     # Build for specific Rust target
 make build-android                      # Build for Android (all ABIs)
 make build-android ARGS="--target arm64-v8a"  # Build for specific Android ABI
-{% if enable_web %}make build-web                          # Build WASM for web
-{% endif %}
+{%- if enable_web %}
+make build-web                          # Build WASM for web
+{%- endif %}
 ```
 
 ### Rust Quality
@@ -83,6 +67,7 @@ make analyze                             # Run static analysis
 make analyze ARGS="--fatal-infos"        # Strict analysis
 make format                              # Format Dart code
 make format-check                        # Check formatting without changes
+make doc                                 # Generate documentation
 ```
 
 ### Utilities
@@ -90,6 +75,11 @@ make format-check                        # Check formatting without changes
 make get                          # Get dependencies
 make clean                        # Clean build artifacts (including rust/target)
 make version                      # Show current crate version
+make rust-update                  # Update Cargo.lock
+make check-new-{{ package_name }}-version  # Check for new upstream {{ native_library_name }} version
+make check-new-{{ package_name }}-version ARGS="--update"  # Apply update
+make check-template-updates       # Check for copier template updates
+make update-changelog ARGS="--version vX.Y.Z"  # Update CHANGELOG with AI
 make help                         # Show all available commands
 ```
 
