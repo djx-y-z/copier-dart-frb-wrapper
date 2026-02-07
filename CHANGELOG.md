@@ -1,3 +1,9 @@
+## [2.2.1] - 2026-02-07
+
+### Fixed
+
+- **`.gitignore.jinja`** / **`.pubignore.jinja`** — only ignore `.claude/settings.local.json` instead of the entire `.claude/*` directory (previously required `!.claude/skills/` exclusion pattern)
+
 ## [2.2.0] - 2026-02-07
 
 ### Added
@@ -383,6 +389,7 @@
 - Security policy template
 - Git hooks for pre-commit checks
 
+[2.2.1]: https://github.com/djx-y-z/copier-dart-frb-wrapper/compare/v2.2.0...v2.2.1
 [2.2.0]: https://github.com/djx-y-z/copier-dart-frb-wrapper/compare/v2.1.1...v2.2.0
 [2.1.1]: https://github.com/djx-y-z/copier-dart-frb-wrapper/compare/v2.1.0...v2.1.1
 [2.1.0]: https://github.com/djx-y-z/copier-dart-frb-wrapper/compare/v2.0.1...v2.1.0
