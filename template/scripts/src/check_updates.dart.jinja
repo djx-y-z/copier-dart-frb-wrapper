@@ -12,6 +12,9 @@ import 'common.dart';
 /// GitHub repository for upstream {{ native_library_name }} releases.
 const _upstreamRepo = '{{ native_repo }}';
 
+/// Tag prefix used by the upstream repo for {{ native_library_name }} releases.
+const _tagPrefix = '{{ version_tag_prefix }}';
+
 /// Result of checking for updates.
 class UpdateCheckResult {
   const UpdateCheckResult({
@@ -75,7 +78,7 @@ Future<UpdateCheckResult> checkForUpdates({
   bool silent = false,
 }) async {
   // Read current version from rust/Cargo.toml
-{%- if upstream_crate or upstream_crates %}
+{%- if upstream_crates %}
   final currentVersion = getUpstreamVersion();
 {%- else %}
   final currentVersion = getCrateVersion();
@@ -128,22 +131,30 @@ Future<UpdateCheckResult> checkForUpdates({
   );
 }
 
-/// Normalize version by removing 'v' prefix for comparison.
+/// Normalize version by removing the tag prefix for comparison.
+///
+/// Strips the configured tag prefix ('{{ version_tag_prefix }}') and falls back
+/// to stripping a plain 'v'/'V' prefix if the tag prefix doesn't match.
 String _normalizeVersion(String version) {
-{%- if strip_version_prefix %}
-  if (version.startsWith('v')) {
+  if (version.startsWith(_tagPrefix)) {
+    return version.substring(_tagPrefix.length);
+  }
+  if (version.startsWith('v') || version.startsWith('V')) {
     return version.substring(1);
   }
-{%- endif %}
   return version;
 }
 
 /// Check if a version is a prerelease.
+///
+/// Normalizes the version first to strip the tag prefix, then
+/// checks for prerelease indicators like `-alpha`, `-beta`, `-rc`.
 bool _isPrerelease(String version) {
-  return version.contains('-') ||
-      version.contains('alpha') ||
-      version.contains('beta') ||
-      version.contains('rc');
+  final normalized = _normalizeVersion(version);
+  return normalized.contains('-') ||
+      normalized.contains('alpha') ||
+      normalized.contains('beta') ||
+      normalized.contains('rc');
 }
 
 /// Fetch the latest release from GitHub API.
@@ -173,7 +184,7 @@ Future<Map<String, dynamic>> _fetchLatestRelease() async {
 /// Update upstream version in all relevant files.
 ///
 /// Updates:
-{%- if upstream_crate or upstream_crates %}
+{%- if upstream_crates %}
 /// - rust/Cargo.toml (upstream dependency tag)
 {%- endif %}
 /// - README.md (badge) - if exists
@@ -188,32 +199,8 @@ Future<List<String>> updateVersionFiles({
 }) async {
   final packageDir = getPackageDir();
   final updatedFiles = <String>[];
-{%- if upstream_crate %}
-
-  // 1. Update rust/Cargo.toml (upstream dependency tag)
-  if (!silent) logStep('Updating rust/Cargo.toml...');
-  final cargoFile = File('${packageDir.path}/rust/Cargo.toml');
-  if (!cargoFile.existsSync()) {
-    throw Exception('rust/Cargo.toml not found');
-  }
-  var cargoContent = cargoFile.readAsStringSync();
-
-  // Update upstream dependency tag
-  // Matches: {{ upstream_crate }} = { git = "...", tag = "vX.Y.Z" }
-  final tagPattern = RegExp(
-    r'({{ upstream_crate }}\s*=\s*\{[^}]*tag\s*=\s*")[^"]+(")',
-  );
-
-  cargoContent = cargoContent.replaceAllMapped(
-    tagPattern,
-    (match) => '${match.group(1)}$newVersion${match.group(2)}',
-  );
-
-  await cargoFile.writeAsString(cargoContent);
-  updatedFiles.add('rust/Cargo.toml');
-  if (!silent) logInfo('Updated rust/Cargo.toml: tag = "$newVersion"');
-{%- elif upstream_crates %}
-  // 1. Update rust/Cargo.toml (all upstream dependency tags)
+{%- if upstream_crates %}
+  // 1. Update rust/Cargo.toml (upstream dependency tags)
   if (!silent) logStep('Updating rust/Cargo.toml...');
   final cargoFile = File('${packageDir.path}/rust/Cargo.toml');
   if (!cargoFile.existsSync()) {

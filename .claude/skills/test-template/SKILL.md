@@ -47,9 +47,8 @@ rm -rf /tmp/test_upstream && copier copy . /tmp/test_upstream \
   --data native_library_name=signal \
   --data github_repo=user/test_signal \
   --data native_repo=signalapp/libsignal \
-  --data upstream_crate=libsignal-protocol \
-  --data upstream_version=v0.86.0 \
-  --data strip_version_prefix=true
+  --data upstream_crates=libsignal-protocol \
+  --data upstream_version=v0.86.0
 
 # Full configuration (upstream + web)
 rm -rf /tmp/test_full && copier copy . /tmp/test_full \
@@ -59,9 +58,8 @@ rm -rf /tmp/test_full && copier copy . /tmp/test_full \
   --data native_library_name=signal \
   --data github_repo=user/test_full \
   --data native_repo=signalapp/libsignal \
-  --data upstream_crate=libsignal-protocol \
+  --data upstream_crates=libsignal-protocol \
   --data upstream_version=v0.86.0 \
-  --data strip_version_prefix=true \
   --data enable_web=true
 ```
 
@@ -90,9 +88,9 @@ rm -rf /tmp/test_full && copier copy . /tmp/test_full \
 - `frb_version` - FRB version (default: "^2.11.1")
 - `enable_web` - Web/WASM support (default: true)
 - `enable_claude` - Claude Code files (default: true)
-- `upstream_crate` - Upstream Rust crate (default: "")
+- `upstream_crates` - Upstream Rust crates, comma-separated (default: "")
 - `upstream_version` - Upstream version (default: "")
-- `strip_version_prefix` - Strip 'v' from tags (default: false)
+- `version_tag_prefix` - Tag prefix for version normalization (default: "v")
 - `flutter_version` - FVM Flutter version (default: "3.38.4")
 - `dart_sdk_version` - Dart SDK constraint (default: "^3.10.0")
 - `flutter_sdk_version` - Flutter SDK constraint (default: ">=3.38.0")

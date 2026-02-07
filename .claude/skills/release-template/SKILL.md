@@ -37,27 +37,78 @@ Use [Semantic Versioning](https://semver.org/): `vMAJOR.MINOR.PATCH`
 | New features | MINOR | New variables, new template files, new conditionals |
 | Bug fixes | PATCH | Typo fixes, documentation updates, minor corrections |
 
-## CHANGELOG.md Format
+## CHANGELOG.md Rules
+
+### Released versions are immutable
+
+**NEVER edit entries for already-released versions** (those with a git tag). Released entries are a historical record of what shipped with that tag. If the v1.0.0 entry says `upstream_crate`, it stays `upstream_crate` even if the variable was later renamed to `upstream_crates` in v2.0.0.
+
+- To document a rename/removal: add a new version entry describing the breaking change
+- To fix a factual error in an old entry: add a correction note in the new version, not by editing the old one
+
+### Section order
+
+Use [Keep a Changelog](https://keepachangelog.com/) categories in this order:
+
+1. `### Changed (BREAKING)` — for breaking changes (MAJOR version bumps only)
+2. `### Added` — new features
+3. `### Changed` — non-breaking changes to existing functionality
+4. `### Fixed` — bug fixes
+5. `### Removed` — removed features
+6. `### Security` — security-related changes
+
+Not every section is needed — only include sections that have entries.
+
+### Entry format
+
+- Start each entry with **bold file/component name** followed by em dash and description
+- Use backticks for code identifiers: variable names, file names, commands
+- For template files, use the Jinja filename: `build-{{ package_name }}.yml.jinja`
+- Be specific about what changed and why — "fixed workflow" is too vague
 
 ```markdown
-## [Unreleased]
+- **`check_updates.dart.jinja`** — version normalization now uses configurable `_tagPrefix` constant
+- **`Cargo.toml.jinja`** — unified dependency generation to single loop for `upstream_crates`
+```
 
-## [1.1.0] - 2025-01-28
+### Examples must be consistent
 
-### Added
-- New `my_variable` for custom configuration
+Use the project's canonical examples throughout:
+- Single upstream crate: `libsignal-protocol`
+- Multiple upstream crates: `libsignal-protocol,libsignal-core`
+- Version tag prefix: `release-v` (for non-standard tags like `release-v1.0.0`)
+- Native repo: `signalapp/libsignal`
+
+Do NOT use other libraries (e.g. openmls) as examples — keep all documentation consistent.
+
+### Comparison links
+
+Every version entry needs a comparison link at the bottom of the file:
+
+```markdown
+[2.0.0]: https://github.com/djx-y-z/copier-dart-frb-wrapper/compare/v1.9.0...v2.0.0
+[1.9.0]: https://github.com/djx-y-z/copier-dart-frb-wrapper/compare/v1.8.0...v1.9.0
+```
+
+- Each link compares from the previous version tag to the current version tag
+- The first version uses `/releases/tag/v1.0.0` (no comparison)
+- When releasing: remove the `[Unreleased]` link, add the new version link
+
+### Format reference
+
+```markdown
+## [2.0.0] - 2026-02-07
+
+### Changed (BREAKING)
+- **`upstream_crate` variable removed** — consolidated into `upstream_crates`
 
 ### Changed
-- Updated default `flutter_version` to 3.38.4
+- **`Cargo.toml.jinja`** — unified dependency generation
 
-### Fixed
-- Corrected WASM build configuration
+### Added
+- **`template/{{ _copier_conf.answers_file }}.jinja`** — Copier answers file
 
-### Removed
-- Deprecated `old_variable`
-
-[Unreleased]: https://github.com/djx-y-z/copier-dart-frb-wrapper/compare/v1.1.0...HEAD
-[1.1.0]: https://github.com/djx-y-z/copier-dart-frb-wrapper/compare/v1.0.0...v1.1.0
+[2.0.0]: https://github.com/djx-y-z/copier-dart-frb-wrapper/compare/v1.9.0...v2.0.0
 [1.0.0]: https://github.com/djx-y-z/copier-dart-frb-wrapper/releases/tag/v1.0.0
 ```
 
@@ -93,7 +144,7 @@ rm -rf /tmp/test && copier copy . /tmp/test --trust --defaults \
   --data native_library_name=lib \
   --data github_repo=u/r \
   --data native_repo=o/lib \
-  --data upstream_crate=some_crate \
+  --data upstream_crates=some_crate \
   --data upstream_version=v1.0.0
 ```
 

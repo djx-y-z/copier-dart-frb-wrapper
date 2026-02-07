@@ -110,33 +110,27 @@ frb_version:
   default: "^2.11.1"
 
 # -----------------------------------------------------------------------------
-# Upstream Rust crate (optional)
+# Upstream Rust crates (optional)
 # -----------------------------------------------------------------------------
-upstream_crate:
-  type: str
-  help: "Upstream Rust crate to wrap (optional, leave empty if not using)"
-  default: ""
-
-# Multiple upstream Rust crates (for git-based dependencies from same repo)
-# Note: Use EITHER upstream_crate (single) OR upstream_crates (multiple), not both
 upstream_crates:
   type: str
-  help: "Comma-separated list of upstream Rust crates from same git repo (e.g., 'libsignal-protocol,libsignal-core,signal-crypto'). Use this instead of upstream_crate when you have multiple crates."
+  help: "Comma-separated list of upstream Rust crates from the same git repo (e.g., 'libsignal-protocol' for single crate, or 'libsignal-protocol,libsignal-core' for multiple). Leave empty if not wrapping an upstream crate."
   default: ""
 
 upstream_version:
   type: str
   help: "Version/tag of the upstream crate (e.g., v1.0.0)"
   default: ""
-  when: "{{ upstream_crate != '' or upstream_crates != '' }}"
+  when: "{{ upstream_crates != '' }}"
 
 # -----------------------------------------------------------------------------
-# Version prefix handling
+# Version tag prefix
 # -----------------------------------------------------------------------------
-strip_version_prefix:
-  type: bool
-  help: "Strip 'v' prefix from upstream version tags (v1.0.0 -> 1.0.0)"
-  default: false
+version_tag_prefix:
+  type: str
+  help: "Tag prefix for upstream version tags (e.g., 'v' for tags like v1.0.0, 'release-v' for tags like release-v1.0.0). Used to normalize versions for comparison and prerelease detection."
+  default: "v"
+  when: "{{ upstream_crates != '' }}"
 
 # -----------------------------------------------------------------------------
 # Web/WASM support
@@ -304,8 +298,7 @@ _message_after_copy: |
 
   Package: {{ package_name }}
   Crate: {{ crate_name }}
-  {% if upstream_crate %}Upstream: {{ upstream_crate }} @ {{ upstream_version }}{% endif %}
-  {% if upstream_crates %}Upstream crates: {{ upstream_crates }} @ {{ upstream_version }}{% endif %}
+  {% if upstream_crates %}Upstream: {{ upstream_crates }} @ {{ upstream_version }}{% endif %}
 
   Next steps:
 
@@ -319,31 +312,36 @@ _message_after_copy: |
   3. Install dependencies and setup:
      make setup
 
-  4. Implement your Rust API in rust/src/api/
-     Add your FRB-annotated functions here
-
-  5. Generate Dart bindings:
+  4. Generate Dart bindings:
      make codegen
 
-  6. Build native libraries:
+  5. Build native libraries:
      make build
 
-  7. Implement your Dart API in lib/src/
+  6. Verify everything works:
+     make analyze         # Dart static analysis (should be clean)
+     make rust-check      # Rust type check
+     make test            # Run tests (should pass)
 
-  8. Update example apps in example/ and example_cli/
+  7. Implement your Rust API in rust/src/api/
+     Add your FRB-annotated functions here
 
-  9. Write tests in test/ directory
-     See test/{{ package_name }}_test.dart for template
+  8. Regenerate bindings after Rust changes:
+     make codegen
 
-  10. Run tests:
-      make test
+  9. Implement your Dart API in lib/src/
 
-  11. Customize package metadata:
+  10. Update example apps in example/ and example_cli/
+
+  11. Write tests in test/ directory
+      See test/{{ package_name }}_test.dart for template
+
+  12. Customize package metadata:
       - Update topics in pubspec.yaml if needed
       - Add topics in GitHub repository settings
       - Review and update SECURITY.md with your contact information
 
-  12. Configure GitHub Actions:
+  13. Configure GitHub Actions:
       - Create GitHub App for signed commits (APP_ID, APP_PRIVATE_KEY)
       - Setup coverage badge (GIST_TOKEN, COVERAGE_GIST_ID)
       See README.md for detailed instructions

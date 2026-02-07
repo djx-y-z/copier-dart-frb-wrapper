@@ -75,9 +75,8 @@ copier copy https://github.com/djx-y-z/copier-dart-frb-wrapper . \
   --data rust_edition=2024 \
   --data rust_version=1.88 \
   --data frb_version="^2.11.1" \
-  --data upstream_crate=libsignal \
+  --data upstream_crates=libsignal \
   --data upstream_version=v0.86.0 \
-  --data strip_version_prefix=true \
   --data enable_web=true \
   --data flutter_version=3.38.4 \
   --data dart_sdk_version="^3.10.0" \
@@ -127,9 +126,9 @@ copier copy https://github.com/djx-y-z/copier-dart-frb-wrapper . \
 
 | Variable | Description | Default | Example |
 |----------|-------------|---------|---------|
-| `upstream_crate` | Upstream Rust crate to wrap | `` | `libsignal-protocol` |
+| `upstream_crates` | Upstream Rust crates (comma-separated) | `` | `libsignal-protocol` or `libsignal-protocol,libsignal-core` |
 | `upstream_version` | Version/tag of upstream crate | `` | `v0.86.0` |
-| `strip_version_prefix` | Strip 'v' prefix from version tags | `false` | `true` |
+| `version_tag_prefix` | Tag prefix for upstream version tags (used for version normalization) | `v` | `release-v` |
 
 ### Flutter/Dart Configuration
 
@@ -173,6 +172,11 @@ make codegen
 
 # Build native libraries for current platform
 make build
+
+# Verify everything works
+make analyze          # Dart static analysis (should be clean)
+make rust-check       # Rust type check
+make test             # Run tests (should pass)
 ```
 
 ### 2. GitHub Repository Setup

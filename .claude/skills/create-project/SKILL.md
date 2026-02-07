@@ -104,9 +104,9 @@ copier copy https://github.com/djx-y-z/copier-dart-frb-wrapper /path/to/destinat
 | `frb_version` | `^2.11.1` | Flutter Rust Bridge version |
 | `enable_web` | `true` | Enable Web/WASM support |
 | `enable_claude` | `true` | Include Claude Code configuration files |
-| `upstream_crate` | `""` | Upstream Rust crate to wrap (optional) |
+| `upstream_crates` | `""` | Upstream Rust crates, comma-separated (optional) |
 | `upstream_version` | `""` | Version of upstream crate |
-| `strip_version_prefix` | `false` | Strip 'v' prefix from version tags |
+| `version_tag_prefix` | `v` | Tag prefix for version normalization |
 | `flutter_version` | `3.38.4` | Flutter version for FVM |
 | `dart_sdk_version` | `^3.10.0` | Dart SDK version constraint |
 | `flutter_sdk_version` | `>=3.38.0` | Flutter SDK version constraint |
@@ -158,9 +158,8 @@ copier copy https://github.com/djx-y-z/copier-dart-frb-wrapper ~/projects/signal
   --data native_library_name=signal \
   --data github_repo=myuser/signal_dart \
   --data native_repo=signalapp/libsignal \
-  --data upstream_crate=libsignal-protocol \
-  --data upstream_version=v0.86.0 \
-  --data strip_version_prefix=true
+  --data upstream_crates=libsignal-protocol \
+  --data upstream_version=v0.86.0
 ```
 
 ### Full Custom Configuration

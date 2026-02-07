@@ -113,9 +113,8 @@ rm -rf /tmp/test_upstream && copier copy . /tmp/test_upstream \
   --data native_library_name=signal \
   --data github_repo=user/test_signal \
   --data native_repo=signalapp/libsignal \
-  --data upstream_crate=libsignal-protocol \
-  --data upstream_version=v0.86.0 \
-  --data strip_version_prefix=true
+  --data upstream_crates=libsignal-protocol \
+  --data upstream_version=v0.86.0
 
 # Test full configuration (upstream + web)
 rm -rf /tmp/test_full && copier copy . /tmp/test_full \
@@ -125,9 +124,8 @@ rm -rf /tmp/test_full && copier copy . /tmp/test_full \
   --data native_library_name=signal \
   --data github_repo=user/test_full \
   --data native_repo=signalapp/libsignal \
-  --data upstream_crate=libsignal-protocol \
+  --data upstream_crates=libsignal-protocol \
   --data upstream_version=v0.86.0 \
-  --data strip_version_prefix=true \
   --data enable_web=true
 ```
 
@@ -143,7 +141,7 @@ This template uses Jinja2 with [jinja2-strcase](https://pypi.org/project/jinja2-
 {{ package_name | to_screaming_snake }} # CONSTANT_CASE: MY_PACKAGE
 
 {% if enable_web %}...{% endif %}       # Conditional for Web/WASM support
-{% if upstream_crate %}...{% endif %}   # Conditional for upstream crate
+{% if upstream_crates %}...{% endif %}  # Conditional for upstream crates
 ```
 
 ## Pull Request Process
@@ -152,7 +150,7 @@ This template uses Jinja2 with [jinja2-strcase](https://pypi.org/project/jinja2-
    - Basic FRB project (web enabled by default)
    - With `enable_web=false`
    - With `enable_claude=false`
-   - With `upstream_crate` specified
+   - With `upstream_crates` specified
 2. Update documentation if needed:
    - `README.md` - if adding new variables or features
    - `CLAUDE.md` - if adding new variables or changing template structure

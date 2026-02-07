@@ -128,7 +128,7 @@ This will:
 Check `rust/Cargo.toml`:
 ```toml
 [dependencies]
-{% if upstream_crate %}{{ upstream_crate }} = { git = "https://github.com/{{ native_repo }}", tag = "{{ upstream_version }}" }{% else %}# upstream crates with tags{% endif %}
+{% if upstream_crates %}{{ upstream_crates.split(',')[0] | trim }} = { git = "https://github.com/{{ native_repo }}", tag = "{{ upstream_version }}" }{% else %}# upstream crates with tags{% endif %}
 ```
 
 ### Step 2: Update Version

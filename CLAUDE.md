@@ -60,9 +60,9 @@ copier-dart-frb-wrapper/
 | `frb_version` | string | `^2.11.1` | Flutter Rust Bridge version |
 | `enable_web` | boolean | `true` | Enable Web/WASM support |
 | `enable_claude` | boolean | `true` | Include Claude Code files |
-| `upstream_crate` | string | `` | Upstream Rust crate to wrap |
+| `upstream_crates` | string | `` | Upstream Rust crates (comma-separated) |
 | `upstream_version` | string | `` | Version of upstream crate |
-| `strip_version_prefix` | boolean | `false` | Strip 'v' from version tags |
+| `version_tag_prefix` | string | `v` | Tag prefix for version normalization |
 | `flutter_version` | string | `3.38.4` | Flutter version for FVM |
 | `dart_sdk_version` | string | `^3.10.0` | Dart SDK version constraint |
 | `flutter_sdk_version` | string | `>=3.38.0` | Flutter SDK version constraint |
@@ -83,7 +83,7 @@ This template uses Jinja2 with [jinja2-strcase](https://pypi.org/project/jinja2-
 {{ package_name | to_snake }}         # snake_case: my_package
 {{ package_name | to_screaming_snake }} # CONSTANT_CASE: MY_PACKAGE
 {% if enable_web %}...{% endif %}     # Conditional for web support
-{% if upstream_crate %}...{% endif %} # Conditional for upstream crate
+{% if upstream_crates %}...{% endif %} # Conditional for upstream crates
 ```
 
 ## Testing the Template
@@ -123,16 +123,15 @@ copier copy . /tmp/test_upstream \
   --data native_library_name=signal \
   --data github_repo=user/test_upstream \
   --data native_repo=signalapp/libsignal \
-  --data upstream_crate=libsignal \
-  --data upstream_version=v0.86.0 \
-  --data strip_version_prefix=true
+  --data upstream_crates=libsignal \
+  --data upstream_version=v0.86.0
 ```
 
 ## Files with Conditional Content
 
-These files have conditional blocks based on `enable_web` or `upstream_crate`:
+These files have conditional blocks based on `enable_web` or `upstream_crates`:
 
-- `rust/Cargo.toml.jinja` - upstream_crate dependency, web features
+- `rust/Cargo.toml.jinja` - upstream crate dependencies, web features
 - `rust/.cargo/config.toml.jinja` - WASM configuration
 - `pubspec.yaml.jinja` - web platform
 - `Makefile.jinja` - build-web, setup-web targets
@@ -202,7 +201,7 @@ ls -la /tmp/test/test/
 
 1. Edit files in `template/{{ package_name }}/`
 2. Use `.jinja` suffix for files with Jinja2 content
-3. Test with different variable combinations (`enable_web`, `upstream_crate`)
+3. Test with different variable combinations (`enable_web`, `upstream_crates`)
 4. Update `copier.yml` if adding new variables
 5. Update documentation (README.md, CLAUDE.md, CONTRIBUTING.md)
 6. Add changes to CHANGELOG.md under `[Unreleased]`

@@ -16,9 +16,7 @@ crate-type = ["cdylib", "staticlib"]
 flutter_rust_bridge = "={{ frb_version | replace('^', '') }}"
 thiserror = "2.0"
 log = "0.4"
-{%- if upstream_crate %}
-{{ upstream_crate }} = { git = "https://github.com/{{ native_repo }}", tag = "{{ upstream_version }}" }
-{%- elif upstream_crates != '' %}
+{%- if upstream_crates %}
 {%- for crate in upstream_crates.split(',') %}
 {{ crate | trim }} = { git = "https://github.com/{{ native_repo }}", tag = "{{ upstream_version }}" }
 {%- endfor %}

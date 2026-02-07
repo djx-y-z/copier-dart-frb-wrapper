@@ -75,12 +75,14 @@ edition = "2021"
 ### Check if variable is defined/truthy
 
 ```jinja2
-{% if upstream_crate %}
-{{ upstream_crate }} = "{{ upstream_version }}"
+{% if upstream_crates %}
+{% for crate in upstream_crates.split(',') %}
+{{ crate | trim }} = "{{ upstream_version }}"
+{% endfor %}
 {% endif %}
 
-{% if upstream_crate != '' %}
-# Has upstream crate
+{% if upstream_crates != '' %}
+# Has upstream crates
 {% endif %}
 ```
 
@@ -132,8 +134,8 @@ dependencies:
 ## Set Variables
 
 ```jinja2
-{% set version = upstream_version[1:] if strip_version_prefix else upstream_version %}
-{{ version }}
+{% set normalized = upstream_version[version_tag_prefix | length:] if upstream_version.startswith(version_tag_prefix) else upstream_version %}
+{{ normalized }}
 ```
 
 ## Common Patterns in This Template
@@ -144,8 +146,10 @@ dependencies:
 # rust/Cargo.toml.jinja
 [dependencies]
 flutter_rust_bridge = "{{ frb_version }}"
-{% if upstream_crate %}
-{{ upstream_crate }} = "{{ upstream_version }}"
+{% if upstream_crates %}
+{% for crate in upstream_crates.split(',') %}
+{{ crate | trim }} = "{{ upstream_version }}"
+{% endfor %}
 {% endif %}
 ```
 

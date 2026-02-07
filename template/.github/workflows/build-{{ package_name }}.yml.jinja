@@ -44,7 +44,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       version: ${{"{{"}} steps.check.outputs.version {{"}}"}}
-{%- if upstream_crate or upstream_crates %}
+{%- if upstream_crates %}
       {{ package_name }}_version: ${{"{{"}} steps.check.outputs.{{ package_name }}_version {{"}}"}}
 {%- endif %}
       skip: ${{"{{"}} steps.check.outputs.skip {{"}}"}}

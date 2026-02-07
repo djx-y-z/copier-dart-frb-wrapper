@@ -75,8 +75,8 @@ feature_enabled: true
 {# Default value if empty #}
 {{ my_variable or 'fallback_value' }}
 
-{# Conditional in expression #}
-version: {{ upstream_version if strip_version_prefix else 'v' + upstream_version }}
+{# Strip tag prefix from version #}
+version: {{ upstream_version[version_tag_prefix | length:] if upstream_version.startswith(version_tag_prefix) else upstream_version }}
 ```
 
 ### In file/directory names
@@ -178,21 +178,21 @@ _tasks:
     when: "{{ not enable_feature }}"
 ```
 
-### Version with optional prefix
+### Version with tag prefix
 
 ```yaml
 upstream_version:
   type: str
   default: ""
 
-strip_version_prefix:
-  type: bool
-  default: false
+version_tag_prefix:
+  type: str
+  default: "v"
 ```
 
 ```jinja2
 {# In template #}
-{% set version = upstream_version[1:] if strip_version_prefix and upstream_version.startswith('v') else upstream_version %}
+{% set version = upstream_version[version_tag_prefix | length:] if upstream_version.startswith(version_tag_prefix) else upstream_version %}
 ```
 
 ### Computed default

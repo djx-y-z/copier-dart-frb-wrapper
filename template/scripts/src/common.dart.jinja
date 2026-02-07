@@ -156,42 +156,10 @@ String getCrateVersion() {
 
   return versionMatch.group(1)!.trim();
 }
-{%- if upstream_crate %}
-
-/// Gets the upstream {{ upstream_crate }} version (git tag) from rust/Cargo.toml.
-///
-/// Parses the tag from: {{ upstream_crate }} = { git = "...", tag = "vX.Y.Z" }
-String getUpstreamVersion() {
-  final packageDir = getPackageDir();
-  final cargoPath = '${packageDir.path}/rust/Cargo.toml';
-  final cargoFile = File(cargoPath);
-
-  if (!cargoFile.existsSync()) {
-    throw Exception('rust/Cargo.toml not found');
-  }
-
-  final content = cargoFile.readAsStringSync();
-
-  // Extract the tag from upstream dependency
-  // Matches: {{ upstream_crate }} = { git = "...", tag = "vX.Y.Z" }
-  final versionMatch = RegExp(
-    r'{{ upstream_crate }}\s*=\s*\{[^}]*tag\s*=\s*"([^"]+)"',
-  ).firstMatch(content);
-
-  if (versionMatch == null) {
-    throw Exception(
-      '{{ upstream_crate }} tag not found in rust/Cargo.toml. '
-      'Expected format: {{ upstream_crate }} = { git = "...", tag = "vX.Y.Z" }',
-    );
-  }
-
-  return versionMatch.group(1)!.trim();
-}
-{%- elif upstream_crates %}
+{%- if upstream_crates %}
 
 /// Gets the upstream version (git tag) from rust/Cargo.toml.
 ///
-/// Supports multiple upstream crates from the same git repo.
 /// Parses the tag from the first crate: {{ upstream_crates.split(',')[0] | trim }} = { git = "...", tag = "vX.Y.Z" }
 String getUpstreamVersion() {
   final packageDir = getPackageDir();
