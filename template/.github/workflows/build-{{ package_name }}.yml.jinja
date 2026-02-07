@@ -339,6 +339,9 @@ jobs:
     runs-on: ubuntu-latest
     env:
       VERSION: ${{"{{"}} needs.check-release.outputs.version {{"}}"}}
+{%- if upstream_crates %}
+      NATIVE_VERSION: ${{"{{"}} needs.check-release.outputs.{{ package_name }}_version {{"}}"}}
+{%- endif %}
     permissions:
       contents: write
     steps:
@@ -420,11 +423,14 @@ jobs:
           gh release create "$TAG" \
             --title "$TITLE" \
             --latest \
-            --notes "$(cat <<'EOF'
+            --notes "$(cat <<EOF
           ## {{ crate_name }} ${VERSION} Native Libraries
 
           Pre-built Flutter Rust Bridge native libraries for all supported platforms.
           **These archives are downloaded automatically by \`hook/build.dart\` during Dart/Flutter builds.**
+{%- if upstream_crates %}
+          Based on {{ native_library_name }} ${NATIVE_VERSION}.
+{%- endif %}
 
           ### Platforms
 

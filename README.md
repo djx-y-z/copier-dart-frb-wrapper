@@ -140,6 +140,13 @@ copier copy https://github.com/djx-y-z/copier-dart-frb-wrapper . \
 | `enable_web` | Enable Web/WASM support | `true` | `false` |
 | `enable_claude` | Include Claude Code files (CLAUDE.md, .claude/skills/) | `true` | `false` |
 
+### iOS / macOS Configuration
+
+| Variable | Description | Default | Example |
+|----------|-------------|---------|---------|
+| `ios_min_version` | iOS minimum deployment target | `13.0` | `15.0` |
+| `macos_min_version` | macOS minimum deployment target | `10.14` | `10.15` |
+
 ### Android Configuration
 
 | Variable | Description | Default | Example |

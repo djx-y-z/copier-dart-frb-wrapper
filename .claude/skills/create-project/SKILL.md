@@ -110,6 +110,8 @@ copier copy https://github.com/djx-y-z/copier-dart-frb-wrapper /path/to/destinat
 | `flutter_version` | `3.38.4` | Flutter version for FVM |
 | `dart_sdk_version` | `^3.10.0` | Dart SDK version constraint |
 | `flutter_sdk_version` | `>=3.38.0` | Flutter SDK version constraint |
+| `ios_min_version` | `13.0` | iOS minimum deployment target |
+| `macos_min_version` | `10.14` | macOS minimum deployment target |
 | `android_min_sdk` | `21` | Android minimum SDK version |
 | `android_compile_sdk` | `34` | Android compile SDK version |
 | `android_ndk_version` | `26.3.11579264` | Android NDK version |
