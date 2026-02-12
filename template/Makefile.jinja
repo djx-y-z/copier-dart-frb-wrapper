@@ -254,16 +254,13 @@ rust-audit:
 # =============================================================================
 
 check-new-{{ package_name }}-version:
-	@touch .skip_{{ package_name }}_hook
-	@$(FVM) dart run scripts/check_new_upstream_version.dart $(ARGS); ret=$$?; rm -f .skip_{{ package_name }}_hook; exit $$ret
+	@$(FVM) dart scripts/check_new_upstream_version.dart $(ARGS)
 
 check-exists-{{ package_name }}-frb-release:
-	@touch .skip_{{ package_name }}_hook
-	@$(FVM) dart run scripts/check_exists_frb_release.dart $(ARGS); ret=$$?; rm -f .skip_{{ package_name }}_hook; exit $$ret
+	@$(FVM) dart scripts/check_exists_frb_release.dart $(ARGS)
 
 check-template-updates:
-	@touch .skip_{{ package_name }}_hook
-	@$(FVM) dart run scripts/check_template_updates.dart $(ARGS); ret=$$?; rm -f .skip_{{ package_name }}_hook; exit $$ret
+	@$(FVM) dart scripts/check_template_updates.dart $(ARGS)
 
 rust-update:
 	@echo "Updating Cargo.lock..."
@@ -272,8 +269,7 @@ rust-update:
 	@echo "Cargo.lock updated!"
 
 update-changelog:
-	@touch .skip_{{ package_name }}_hook
-	@$(FVM) dart run scripts/update_changelog.dart $(ARGS); ret=$$?; rm -f .skip_{{ package_name }}_hook; exit $$ret
+	@$(FVM) dart scripts/update_changelog.dart $(ARGS)
 
 # =============================================================================
 # Dart Quality
@@ -317,11 +313,11 @@ clean:
 	@$(FVM) dart pub get --no-example; ret=$$?; rm -f .skip_{{ package_name }}_hook; exit $$ret
 
 version:
-	@$(FVM) dart run scripts/get_version.dart
+	@$(FVM) dart scripts/get_version.dart
 
 # Internal target for getting version in scripts (outputs only the value)
 get-version:
-	@$(FVM) dart run scripts/get_version.dart --field version
+	@$(FVM) dart scripts/get_version.dart --field version
 
 # =============================================================================
 # Publishing
