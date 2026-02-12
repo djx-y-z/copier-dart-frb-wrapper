@@ -1,3 +1,14 @@
+## [Unreleased]
+
+### Added
+
+- **`README.md.jinja`** — coverage badge (shields.io endpoint via GitHub Gist) with username auto-filled from `github_repo`
+- **`CONTRIBUTING.md.jinja`** — "Setting up Coverage Badge" section with step-by-step guide (create Gist, PAT, repository secret/variable)
+
+### Changed
+
+- **`copier.yml`** — post-generation message now references `CONTRIBUTING.md` instead of `README.md` for GitHub Actions setup instructions
+
 ## [2.3.2] - 2026-02-08
 
 ### Changed

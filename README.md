@@ -204,6 +204,7 @@ Configure secrets and variables in your repository settings (Settings → Secret
 | Secret | Description | Required For |
 |--------|-------------|--------------|
 | `APP_PRIVATE_KEY` | GitHub App private key (PEM format) | Update checker workflow |
+| `AI_MODELS_TOKEN` | Fine-grained PAT with Models: Read permission | AI changelog generation |
 | `GIST_TOKEN` | Personal Access Token with `gist` scope | Coverage badge |
 
 #### Variables (Settings → Secrets and variables → Actions → Variables)
@@ -231,6 +232,39 @@ The GitHub App is used by the `check-*-updates.yml` workflow to create Pull Requ
 6. Scroll down to **Private keys** → **Generate a private key**
 7. A `.pem` file will download → copy its contents as `APP_PRIVATE_KEY` secret
 8. Go to **Install App** (left sidebar) → Install on your repository
+
+#### AI Changelog Setup (optional)
+
+The `check-*-updates.yml` workflow uses [GitHub Models API](https://github.com/marketplace/models) to generate CHANGELOG entries when a new upstream version is detected. Without this token, the workflow still works but skips changelog generation.
+
+1. Go to **Settings → Developer settings → Personal access tokens → Fine-grained tokens**
+2. Click **Generate new token**
+3. Fill in:
+   - **Token name**: `ai-models`
+   - **Expiration**: choose a duration (or no expiration)
+4. Under **Permissions** → **Account permissions** → set **Models** to **Read**
+5. Click **Generate token** → copy and add as `AI_MODELS_TOKEN` secret
+
+#### pub.dev Publishing Setup
+
+The `publish.yml` workflow uses OIDC authentication to publish to pub.dev without tokens. This requires a one-time setup on both pub.dev and GitHub.
+
+**On pub.dev:**
+
+1. Go to https://pub.dev and sign in
+2. Navigate to your publisher page (or create a publisher)
+3. Go to **Admin** → **Automated publishing**
+4. Click **Enable automated publishing**
+5. Add your GitHub repository (e.g., `user/my_package`)
+6. Set **Publishing from**: **GitHub Actions with tag** → tag pattern: `v*`
+
+See [dart.dev/tools/pub/automated-publishing](https://dart.dev/tools/pub/automated-publishing) for details.
+
+**On GitHub (create environment):**
+
+1. Go to your repository → **Settings → Environments**
+2. Click **New environment** → name it `pub.dev`
+3. (Optional) Add deployment protection rules (e.g., required reviewers)
 
 #### Coverage Badge Setup
 

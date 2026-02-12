@@ -360,7 +360,7 @@ _message_after_copy: |
   13. Configure GitHub Actions:
       - Create GitHub App for signed commits (APP_ID, APP_PRIVATE_KEY)
       - Setup coverage badge (GIST_TOKEN, COVERAGE_GIST_ID)
-      See README.md for detailed instructions
+      See CONTRIBUTING.md for detailed instructions
 
   For more information, see {% if enable_claude %}CLAUDE.md and {% endif %}README.md
 
