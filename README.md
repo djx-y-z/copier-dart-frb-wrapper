@@ -263,8 +263,13 @@ See [dart.dev/tools/pub/automated-publishing](https://dart.dev/tools/pub/automat
 **On GitHub (create environment):**
 
 1. Go to your repository → **Settings → Environments**
-2. Click **New environment** → name it `pub.dev`
-3. (Optional) Add deployment protection rules (e.g., required reviewers)
+2. Click **New environment** → name it exactly `pub.dev`
+3. Under **Deployment protection rules**:
+   - Check **Required reviewers** → add yourself (and/or your team) as reviewer
+   - Uncheck **Allow administrators to bypass configured protection rules**
+4. Click **Save protection rules**
+
+> **Why?** The `pub.dev` environment is required by the publish workflow. Protection rules ensure that every publish to pub.dev requires manual approval, preventing accidental releases.
 
 #### Coverage Badge Setup
 
