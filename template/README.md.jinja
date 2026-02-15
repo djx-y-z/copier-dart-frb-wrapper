@@ -143,6 +143,9 @@ make check-new-{{ package_name }}-version
 # Check for new copier template versions
 make check-template-updates
 
+# Check deployment target consistency (iOS/macOS/Android)
+make check-targets
+
 # Update Cargo.lock dependencies
 make rust-update
 
