@@ -1,3 +1,9 @@
+## [Unreleased]
+
+### Fixed
+
+- **`scripts/src/check_updates.dart.jinja`** — `updateVersionFiles` now matches `upstream_version` in `.copier-answers.yml` regardless of YAML quoting style (double-quoted, single-quoted, or unquoted) and preserves the original quoting when writing the new version. Previously the regex only matched double-quoted values, so projects whose `.copier-answers.yml` was written with single quotes (Copier's default) silently skipped the update
+
 ## [2.4.0] - 2026-02-15
 
 ### Added
