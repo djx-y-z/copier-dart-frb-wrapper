@@ -74,6 +74,8 @@ jobs:
 
           ## Installation
 
+          ### Using Copier
+
           ```bash
           # Install dependencies
           pip install copier jinja2-strcase
@@ -85,5 +87,15 @@ jobs:
           # Update existing project (must have .copier-answers.yml)
           copier update --vcs-ref=v${{ steps.version.outputs.version }}
           ```
+
+          ### Using Claude Skills
+
+          If you use [Claude Code](https://claude.com/claude-code), clone this template — it bundles a `create-project` skill that drives Copier for you:
+
+          ```bash
+          git clone --branch v${{ steps.version.outputs.version }} https://github.com/${{ github.repository }}
+          ```
+
+          Then open the cloned directory in Claude Code and run `/create-project`. Describe your package in plain language and the skill runs the Copier commands above.
           EOF
           )"

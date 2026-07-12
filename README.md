@@ -54,6 +54,18 @@ mkdir my_package && cd my_package
 copier copy https://github.com/djx-y-z/copier-dart-frb-wrapper .
 ```
 
+### Create a new project with Claude Code
+
+If you use [Claude Code](https://claude.com/claude-code), clone this template — it
+bundles a `create-project` skill that drives Copier for you:
+
+```bash
+git clone https://github.com/djx-y-z/copier-dart-frb-wrapper
+```
+
+Then open the cloned directory in Claude Code and run `/create-project`. Describe
+your package in plain language and the skill runs the Copier commands above.
+
 ### Update an existing project
 
 ```bash

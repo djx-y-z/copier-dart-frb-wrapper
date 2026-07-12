@@ -1,3 +1,13 @@
+## [Unreleased]
+
+### Added
+
+- **`README.md`** — "Create a new project with Claude Code" subsection under Usage: clone the template (which bundles the `create-project` skill) and run `/create-project` in Claude Code as an alternative to the raw Copier commands.
+
+### Changed
+
+- **`.github/workflows/release.yml`** — the generated GitHub Release notes now present two installation paths under "Installation": the existing **Using Copier** commands and a new **Using Claude Skills** variant that clones the tagged template (which bundles the `create-project` skill) and invokes `/create-project` in Claude Code.
+
 ## [2.5.0] - 2026-07-12
 
 ### Added
