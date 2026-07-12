@@ -101,7 +101,7 @@ copier copy https://github.com/djx-y-z/copier-dart-frb-wrapper /path/to/destinat
 | `crate_name` | `<package_name>_frb` | Rust crate name |
 | `rust_edition` | `2024` | Rust edition (2021 or 2024) |
 | `rust_version` | `1.88` | Minimum Rust version (MSRV) |
-| `frb_version` | `^2.11.1` | Flutter Rust Bridge version |
+| `frb_version` | `^2.12.0` | Flutter Rust Bridge version |
 | `enable_web` | `true` | Enable Web/WASM support |
 | `enable_claude` | `true` | Include Claude Code configuration files |
 | `upstream_crates` | `""` | Upstream Rust crates, comma-separated (optional) |

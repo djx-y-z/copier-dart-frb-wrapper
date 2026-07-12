@@ -57,7 +57,7 @@ copier-dart-frb-wrapper/
 | `crate_name` | string | `<package_name>_frb` | Rust crate name |
 | `rust_edition` | string | `2024` | Rust edition (2021 or 2024) |
 | `rust_version` | string | `1.88` | Minimum Rust version (MSRV) |
-| `frb_version` | string | `^2.11.1` | Flutter Rust Bridge version |
+| `frb_version` | string | `^2.12.0` | Flutter Rust Bridge version |
 | `enable_web` | boolean | `true` | Enable Web/WASM support |
 | `enable_fuzzing` | boolean | `true` | Include a cargo-fuzz harness (rust/fuzz/, Fuzz CI, Makefile targets) |
 | `enable_claude` | boolean | `true` | Include Claude Code files |
@@ -91,11 +91,16 @@ This template uses Jinja2 with [jinja2-strcase](https://pypi.org/project/jinja2-
 
 ## Testing the Template
 
+**Always pass `--vcs-ref HEAD` when testing local changes** — without it,
+Copier renders the template from the latest git *tag*, silently ignoring
+uncommitted (and even committed-but-untagged) changes.
+
 ### Basic FRB project (web enabled by default)
 ```bash
 copier copy . /tmp/test_frb \
   --trust \
   --defaults \
+  --vcs-ref HEAD \
   --data package_name=test_frb \
   --data description="Test FRB wrapper" \
   --data native_library_name=testlib \
@@ -108,6 +113,7 @@ copier copy . /tmp/test_frb \
 copier copy . /tmp/test_no_web \
   --trust \
   --defaults \
+  --vcs-ref HEAD \
   --data package_name=test_no_web \
   --data description="Test without web" \
   --data native_library_name=testlib \
@@ -121,6 +127,7 @@ copier copy . /tmp/test_no_web \
 copier copy . /tmp/test_upstream \
   --trust \
   --defaults \
+  --vcs-ref HEAD \
   --data package_name=test_upstream \
   --data description="Test upstream wrapper" \
   --data native_library_name=signal \
@@ -189,7 +196,7 @@ brew install copier && pip install jinja2-strcase
 
 ```bash
 # Test with defaults
-copier copy . /tmp/test --trust --defaults \
+copier copy . /tmp/test --trust --defaults --vcs-ref HEAD \
   --data package_name=test \
   --data description=Test \
   --data native_library_name=lib \

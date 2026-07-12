@@ -85,7 +85,7 @@ rm -rf /tmp/test_full && copier copy . /tmp/test_full \
 - `crate_name` - Rust crate name (default: `<package_name>_frb`)
 - `rust_edition` - "2021" or "2024" (default: "2024")
 - `rust_version` - MSRV (default: "1.88")
-- `frb_version` - FRB version (default: "^2.11.1")
+- `frb_version` - FRB version (default: "^2.12.0")
 - `enable_web` - Web/WASM support (default: true)
 - `enable_claude` - Claude Code files (default: true)
 - `upstream_crates` - Upstream Rust crates, comma-separated (default: "")
