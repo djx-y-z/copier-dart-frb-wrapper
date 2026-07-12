@@ -8,7 +8,7 @@
 # On Windows CI (Git Bash), use cmd to run fvm.bat from PATH:
 # Example: make build ARGS="--target x86_64-pc-windows-msvc" FVM="cmd //c fvm"
 
-.PHONY: help setup setup-fvm setup-rust-tools setup-frb-codegen setup-android{% if enable_protoc %} setup-protoc{% endif %}{% if enable_web %} setup-web{% endif %}{% if enable_fuzzing %} setup-fuzz{% endif %} codegen regen build build-android{% if enable_web %} build-web{% endif %} test coverage analyze format format-check get clean version check-new-{{ package_name }}-version check-exists-{{ package_name }}-frb-release check-template-updates check-targets rust-audit rust-deny rust-check rust-clippy{% if enable_fuzzing %} fuzz fuzz-list{% endif %} doc publish publish-dry-run rust-update update-changelog
+.PHONY: help setup setup-fvm setup-rust-tools setup-frb-codegen setup-android{% if enable_protoc %} setup-protoc{% endif %}{% if enable_web %} setup-web{% endif %}{% if enable_fuzzing %} setup-fuzz{% endif %} codegen regen build build-android{% if enable_web %} build-web{% endif %} test coverage analyze format format-check get clean version check-new-{{ package_name }}-version check-exists-{{ package_name }}-frb-release check-template-updates check-targets rust-audit rust-deny rust-check rust-clippy{% if enable_fuzzing %} fuzz fuzz-list fuzz-seed{% endif %} doc publish publish-dry-run rust-update update-changelog
 
 # FVM command - can be overridden to provide full path on Windows CI
 FVM ?= fvm
@@ -78,6 +78,7 @@ help:
 	@echo ""
 	@echo "  FUZZING (requires nightly Rust; run 'make setup-fuzz' once)"
 	@echo "    make fuzz-list                    - List available fuzz targets"
+	@echo "    make fuzz-seed                    - Generate the seed corpus (rust/fuzz/corpus/)"
 	@echo "    make fuzz                         - Run a fuzz target"
 	@echo "                                        Example: make fuzz ARGS=\"example -- -max_total_time=60\""
 {%- endif %}
@@ -324,6 +325,11 @@ fuzz:
 		exit 1; \
 	fi
 	cd rust && cargo +nightly fuzz run $(ARGS)
+
+# Generate the seed corpus (valid inputs) under rust/fuzz/corpus/<target>/.
+# Extend rust/fuzz/examples/gen_corpus.rs as you add fuzz targets.
+fuzz-seed:
+	cd rust/fuzz && cargo run --release --example gen_corpus
 {%- endif %}
 
 # =============================================================================

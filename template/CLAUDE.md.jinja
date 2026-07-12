@@ -63,6 +63,7 @@ make rust-deny                    # Check advisories/licenses/sources (cargo-den
 ```bash
 make setup-fuzz                   # One-time: install nightly + cargo-fuzz
 make fuzz-list                    # List available fuzz targets
+make fuzz-seed                    # Generate seed corpus (extend rust/fuzz/examples/gen_corpus.rs)
 make fuzz ARGS="example -- -max_total_time=60"  # Run a fuzz target
 ```
 {% endif %}

@@ -44,9 +44,15 @@ entry point that handles untrusted input (deserializers, message parsers,
 decryptors). A `Fuzz` workflow builds and runs every target on `rust/**` pull
 requests and on a weekly schedule.
 
+Seed the corpus with valid inputs so fuzzing starts from structurally-correct
+data instead of discovering your formats blind: extend
+`rust/fuzz/examples/gen_corpus.rs` whenever you add a target. CI regenerates
+the corpus (`make fuzz-seed`) before every run.
+
 ```bash
 make setup-fuzz                          # one-time: nightly toolchain + cargo-fuzz
 make fuzz-list                           # list targets
+make fuzz-seed                           # generate seed corpus under rust/fuzz/corpus/
 make fuzz ARGS="example -- -max_total_time=60"
 ```
 {%- endif %}

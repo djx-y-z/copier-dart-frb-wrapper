@@ -306,6 +306,10 @@ _tasks:
   - command: rm -rf rust/fuzz .github/workflows/fuzz.yml
     when: "{{ not enable_fuzzing }}"
 
+  # The app-store additional permission only makes sense for AGPL
+  - command: rm -f LICENSE.appstore
+    when: "{{ license != 'AGPL-3.0' }}"
+
   # Format generated Dart code
   - command: dart format .
 

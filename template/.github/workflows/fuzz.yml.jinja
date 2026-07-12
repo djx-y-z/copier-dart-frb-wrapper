@@ -69,6 +69,16 @@ jobs:
             echo "seconds=600" >> "$GITHUB_OUTPUT"
           fi
 
+      # Seeds give libFuzzer structurally-correct starting inputs; tolerate a
+      # deleted generator so projects can opt out by removing the file.
+      - name: Generate seed corpus
+        run: |
+          if [ -f rust/fuzz/examples/gen_corpus.rs ]; then
+            make fuzz-seed
+          else
+            echo "No rust/fuzz/examples/gen_corpus.rs — running with an empty corpus"
+          fi
+
       - name: Build and run all fuzz targets
         run: |
           cd rust
