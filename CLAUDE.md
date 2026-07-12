@@ -59,6 +59,7 @@ copier-dart-frb-wrapper/
 | `rust_version` | string | `1.88` | Minimum Rust version (MSRV) |
 | `frb_version` | string | `^2.11.1` | Flutter Rust Bridge version |
 | `enable_web` | boolean | `true` | Enable Web/WASM support |
+| `enable_fuzzing` | boolean | `true` | Include a cargo-fuzz harness (rust/fuzz/, Fuzz CI, Makefile targets) |
 | `enable_claude` | boolean | `true` | Include Claude Code files |
 | `upstream_crates` | string | `` | Upstream Rust crates (comma-separated) |
 | `upstream_version` | string | `` | Version of upstream crate |

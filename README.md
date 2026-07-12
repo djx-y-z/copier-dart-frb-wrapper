@@ -138,6 +138,7 @@ copier copy https://github.com/djx-y-z/copier-dart-frb-wrapper . \
 | `dart_sdk_version` | Dart SDK version constraint | `^3.10.0` | `^3.8.0` |
 | `flutter_sdk_version` | Flutter SDK version constraint | `>=3.38.0` | `>=3.35.0` |
 | `enable_web` | Enable Web/WASM support | `true` | `false` |
+| `enable_fuzzing` | Include a cargo-fuzz harness (rust/fuzz/, Fuzz CI, Makefile targets) | `true` | `false` |
 | `enable_claude` | Include Claude Code files (CLAUDE.md, .claude/skills/) | `true` | `false` |
 
 ### iOS / macOS Configuration

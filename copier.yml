@@ -149,6 +149,14 @@ enable_protoc:
   default: false
 
 # -----------------------------------------------------------------------------
+# Fuzzing support (cargo-fuzz)
+# -----------------------------------------------------------------------------
+enable_fuzzing:
+  type: bool
+  help: "Include a cargo-fuzz harness (rust/fuzz/, Fuzz CI workflow, Makefile targets). Recommended for libraries that parse untrusted bytes."
+  default: true
+
+# -----------------------------------------------------------------------------
 # Claude Code support
 # -----------------------------------------------------------------------------
 enable_claude:
@@ -250,7 +258,6 @@ topics:
 _tasks:
   # Initialize git repository
   - command: git init
-    working_directory: "{{ _copier_conf.dst_path }}"
 
   # Create Flutter example app
   # Note: --project-name=example creates applicationId=com.{package_name}.example
@@ -260,7 +267,6 @@ _tasks:
       --platforms=android,ios,linux,macos,windows{% if enable_web %},web{% endif %}
       --project-name example
       --org com.{{ package_name }}
-    working_directory: "{{ _copier_conf.dst_path }}"
 
   # Copy template files to example and remove default widget_test.dart
   - command: >-
@@ -272,11 +278,9 @@ _tasks:
       cp _templates/example_macos_debug.xcconfig example/macos/Flutter/Flutter-Debug.xcconfig &&
       cp _templates/example_macos_release.xcconfig example/macos/Flutter/Flutter-Release.xcconfig &&
       cp _templates/example_widget_test.dart example/test/widget_test.dart
-    working_directory: "{{ _copier_conf.dst_path }}"
 
   # Create CLI example app
   - command: dart create -t console example_cli --force
-    working_directory: "{{ _copier_conf.dst_path }}"
 
   # Copy template files to example_cli and cleanup (remove default test and lib)
   - command: >-
@@ -286,24 +290,24 @@ _tasks:
       cp _templates/example_cli_analysis_options.yaml example_cli/analysis_options.yaml &&
       rm -f example_cli/bin/example_cli.dart &&
       rm -rf example_cli/test example_cli/lib
-    working_directory: "{{ _copier_conf.dst_path }}"
 
   # Get dependencies for example_cli (after pubspec.yaml replacement)
   - command: dart pub get
-    working_directory: "{{ _copier_conf.dst_path }}/example_cli"
+    working_directory: example_cli
 
   # Remove _templates directory
   - command: rm -rf _templates
-    working_directory: "{{ _copier_conf.dst_path }}"
 
   # Remove Claude files when enable_claude is false
   - command: rm -rf CLAUDE.md .claude
-    working_directory: "{{ _copier_conf.dst_path }}"
     when: "{{ not enable_claude }}"
+
+  # Remove fuzzing files when enable_fuzzing is false
+  - command: rm -rf rust/fuzz .github/workflows/fuzz.yml
+    when: "{{ not enable_fuzzing }}"
 
   # Format generated Dart code
   - command: dart format .
-    working_directory: "{{ _copier_conf.dst_path }}"
 
 # =============================================================================
 # Messages

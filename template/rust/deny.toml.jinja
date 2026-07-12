@@ -1,0 +1,72 @@
+# cargo-deny configuration for {{ crate_name }}.
+#
+# Runs in CI (see .github/workflows/test-reusable.yml) and locally via
+# `make rust-deny`. Complements `cargo audit`:
+#   - advisories: fail on known RustSec vulnerabilities
+#   - licenses:   only allow licenses compatible with this package
+#   - bans:       flag duplicate/wildcard dependencies
+#   - sources:    only permit crates.io and explicitly-listed git repositories
+#
+# Schema reference: https://embarkstudios.github.io/cargo-deny/
+
+[graph]
+targets = []
+all-features = false
+
+[advisories]
+version = 2
+# Add advisory IDs here (each with a justification comment) only to consciously
+# accept a risk that cannot yet be remediated, e.g. an unmaintained build-time
+# dependency pulled transitively by an upstream crate with no available upgrade.
+ignore = []
+
+[licenses]
+version = 2
+confidence-threshold = 0.9
+# The project's own license plus the permissive licenses commonly found in a
+# Rust dependency tree. Extend this list if `cargo deny check licenses` reports
+# a license it did not encounter (that is expected the first time you build).
+allow = [
+    "{{ license }}",
+{%- if license == "AGPL-3.0" %}
+    "AGPL-3.0-only",
+    "AGPL-3.0-or-later",
+{%- endif %}
+    "MIT",
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "Zlib",
+    "MPL-2.0",
+    "Unicode-3.0",
+    "Unicode-DFS-2016",
+    "CC0-1.0",
+    "0BSD",
+]
+exceptions = []
+
+[bans]
+# Diamond dependencies are common in crypto/WASM trees, so duplicates warn.
+multiple-versions = "warn"
+# Git dependencies pinned by tag (with no version requirement) are reported as
+# wildcards, so wildcards warn rather than fail; a genuinely sloppy `"*"`
+# crates.io dependency still shows up in the log.
+wildcards = "warn"
+allow = []
+deny = []
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+allow-git = [
+{%- if upstream_crates %}
+    # Upstream crate repository (pinned by tag in Cargo.toml, by commit in Cargo.lock).
+    "https://github.com/{{ native_repo }}",
+{%- endif %}
+    # Add any additional git dependency repositories here. Transitive git deps
+    # (a crate the upstream itself pulls from git) must be listed explicitly or
+    # `cargo deny check sources` will fail.
+]

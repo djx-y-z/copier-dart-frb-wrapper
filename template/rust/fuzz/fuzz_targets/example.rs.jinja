@@ -1,0 +1,21 @@
+#![no_main]
+//! Example fuzz target — REPLACE ME.
+//!
+//! This placeholder demonstrates the harness by feeding arbitrary bytes to the
+//! library's init function. It won't find much on its own: the real value comes
+//! from fuzzing the functions that parse *untrusted* input.
+//!
+//! Add one target per byte-parsing entry point you expose to Dart, for example:
+//!   - `deserialize` / `try_from` functions that build a type from `Vec<u8>`
+//!   - message / frame parsers
+//!   - decryption functions (the ciphertext is attacker-controlled)
+//!
+//! Each target only needs to prove the function never panics on malformed
+//! input — returning an `Err` is a success. See SECURITY.md for guidance.
+
+use libfuzzer_sys::fuzz_target;
+
+fuzz_target!(|data: &[u8]| {
+    let input = String::from_utf8_lossy(data).into_owned();
+    let _ = {{ crate_name }}::api::init::init_{{ package_name | to_snake }}(input);
+});

@@ -1,0 +1,94 @@
+# Fuzzing workflow (cargo-fuzz + libFuzzer)
+#
+# - Pull requests touching rust/**: build all fuzz targets and run each briefly
+#   to catch parsers that panic on malformed input.
+# - Weekly schedule: a longer run per target for deeper exploration.
+# - Manual dispatch: choose the per-target duration.
+#
+# Targets are discovered dynamically with `cargo fuzz list`, so adding a new
+# fuzz target requires no change to this workflow. Any crash is uploaded as an
+# artifact (the reproducing input) for local replay.
+
+name: Fuzz
+
+on:
+  pull_request:
+    paths:
+      - 'rust/**'
+      - '.github/workflows/fuzz.yml'
+  schedule:
+    - cron: '0 4 * * 1'
+  workflow_dispatch:
+    inputs:
+      duration:
+        description: 'Seconds to run each fuzz target'
+        type: string
+        default: '300'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fuzz-${{"{{"}} github.ref {{"}}"}}
+  cancel-in-progress: true
+
+jobs:
+  fuzz:
+    name: Fuzz
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+{%- if enable_protoc %}
+
+      - name: Setup Protoc
+        uses: ./.github/actions/setup-protoc
+{%- endif %}
+
+      - name: Setup nightly Rust
+        uses: dtolnay/rust-toolchain@nightly
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            rust -> target
+            rust/fuzz -> target
+          cache-on-failure: true
+
+      - name: Install cargo-fuzz
+        run: cargo install cargo-fuzz --locked
+
+      - name: Determine run duration
+        id: duration
+        run: |
+          if [ "${{"{{"}} github.event_name {{"}}"}}" = "pull_request" ]; then
+            echo "seconds=60" >> "$GITHUB_OUTPUT"
+          elif [ "${{"{{"}} github.event_name {{"}}"}}" = "workflow_dispatch" ]; then
+            echo "seconds=${{"{{"}} github.event.inputs.duration {{"}}"}}" >> "$GITHUB_OUTPUT"
+          else
+            echo "seconds=600" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build and run all fuzz targets
+        run: |
+          cd rust
+          cargo +nightly fuzz build
+          for target in $(cargo +nightly fuzz list); do
+            echo "::group::fuzz $target"
+            # -timeout gives libFuzzer a per-input watchdog so a single hanging
+            # input is aborted and reported rather than running until the job's
+            # hard timeout (-max_total_time only bounds the loop between inputs).
+            cargo +nightly fuzz run "$target" -- \
+              -max_total_time=${{"{{"}} steps.duration.outputs.seconds {{"}}"}} \
+              -timeout=30 \
+              -rss_limit_mb=4096
+            echo "::endgroup::"
+          done
+
+      - name: Upload crash artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fuzz-artifacts
+          path: rust/fuzz/artifacts/
+          if-no-files-found: ignore

@@ -18,21 +18,38 @@ This package implements several security measures:
 
 ### Supply Chain Security
 
-- **SHA256 Checksums**: All pre-built native libraries are verified against checksums before use
-- **Signed Releases**: GitHub Releases include checksum files for verification
-- **Dependency Auditing**: `cargo audit` is run in CI to detect known vulnerabilities in Rust dependencies
+- **SHA256 Checksums (fail-closed)**: pre-built native libraries are verified against a checksums file published in the same GitHub Release. Verification is **fail-closed** — if the checksums cannot be fetched or lack an entry for the archive, the build hook (`hook/build.dart`) **aborts** rather than loading an unverified binary. The escape hatch `{{ package_name | upper }}_ALLOW_UNVERIFIED_DOWNLOAD=1` exists only for older releases with no checksums file.
+- **Dependency Auditing**: `cargo audit` (`make rust-audit`) and `cargo deny` (`make rust-deny`) run in CI. `cargo-deny` enforces RustSec advisories, an allowed-license list, and a source allow-list restricted to crates.io and explicitly-listed git repositories (see `rust/deny.toml`).
+
+> **Note (authenticity):** SHA256 verifies *integrity* but not *authenticity* — the checksums file ships in the same release as the archive. A detached signature (minisign/cosign) with a public key pinned in `hook/build.dart`, plus SLSA build provenance, is the recommended next step for high-assurance use.
 
 ### Build Security
 
 - **Reproducible Builds**: CI builds are automated and reproducible
 - **Minimal Dependencies**: We keep dependencies minimal and well-audited
 - **LTO and Stripping**: Release builds use Link-Time Optimization and symbol stripping
+- **Hardened profile**: the wrapper crate is compiled with `overflow-checks` (integer overflow panics instead of wrapping) and `unsafe_code = "deny"` on hand-written code
 
 ### Code Security
 
 - **Memory Safety**: Core functionality is written in Rust, which provides memory safety guarantees
-- **No Unsafe Code**: We avoid `unsafe` Rust code where possible
-- **Static Analysis**: Both Dart (`dart analyze`) and Rust (`cargo clippy`) static analysis are run in CI
+- **No Unsafe Code**: hand-written Rust is compiled with `unsafe_code = "deny"`; only the FRB-generated bridge is exempt
+- **Static Analysis**: Dart (`dart analyze --fatal-infos`) and Rust (`cargo clippy`, warnings treated as errors) run in CI, alongside `cargo audit` and `cargo deny`
+{%- if enable_fuzzing %}
+
+### Fuzzing
+
+A `cargo-fuzz` harness lives under `rust/fuzz/`. Add one target per byte-parsing
+entry point that handles untrusted input (deserializers, message parsers,
+decryptors). A `Fuzz` workflow builds and runs every target on `rust/**` pull
+requests and on a weekly schedule.
+
+```bash
+make setup-fuzz                          # one-time: nightly toolchain + cargo-fuzz
+make fuzz-list                           # list targets
+make fuzz ARGS="example -- -max_total_time=60"
+```
+{%- endif %}
 
 ## Upstream Security
 

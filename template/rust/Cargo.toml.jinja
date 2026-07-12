@@ -10,7 +10,12 @@ publish = false
 
 [lib]
 name = "{{ crate_name }}"
+{%- if enable_fuzzing %}
+# rlib is required so the fuzz crate (rust/fuzz) can link against this crate.
+crate-type = ["cdylib", "staticlib", "rlib"]
+{%- else %}
 crate-type = ["cdylib", "staticlib"]
+{%- endif %}
 
 [dependencies]
 flutter_rust_bridge = "={{ frb_version | replace('^', '') }}"
@@ -44,5 +49,14 @@ strip = true
 wasm-opt = ["-O4", "--enable-bulk-memory", "--enable-nontrapping-float-to-int"]
 {%- endif %}
 
+# Turn silent integer wraparound into a deterministic panic — but ONLY for this
+# crate's own code. Applying overflow-checks tree-wide would change the release
+# arithmetic of audited upstream dependencies, some of which rely on wrapping.
+[profile.release.package.{{ crate_name }}]
+overflow-checks = true
+
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ["cfg(frb_expand)"] }
+# No unsafe in hand-written code; the FRB-generated module opts out explicitly
+# via #[allow(unsafe_code)] in lib.rs.
+unsafe_code = "deny"

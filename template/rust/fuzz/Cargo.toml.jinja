@@ -1,0 +1,32 @@
+[package]
+name = "{{ crate_name }}-fuzz"
+version = "0.0.0"
+publish = false
+edition = "{{ rust_edition }}"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+# Uncomment if you want structured (typed) fuzz inputs via #[derive(Arbitrary)]:
+# arbitrary = { version = "1", features = ["derive"] }
+
+[dependencies.{{ crate_name }}]
+path = ".."
+
+# Keep overflow and debug-assertion checks on even for optimized fuzzing runs
+# so arithmetic bugs surface as crashes instead of silent wraparound.
+[profile.release]
+debug = 1
+overflow-checks = true
+debug-assertions = true
+
+# One [[bin]] per fuzz target. Add your own targets here (and a matching file in
+# fuzz_targets/) as you expose byte-parsing functions to fuzz.
+[[bin]]
+name = "example"
+path = "fuzz_targets/example.rs"
+test = false
+doc = false
+bench = false
