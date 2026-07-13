@@ -1,4 +1,4 @@
-## [Unreleased]
+## [2.5.1] - 2026-07-13
 
 ### Added
 
@@ -512,6 +512,7 @@
 - Security policy template
 - Git hooks for pre-commit checks
 
+[2.5.1]: https://github.com/djx-y-z/copier-dart-frb-wrapper/compare/v2.5.0...v2.5.1
 [2.5.0]: https://github.com/djx-y-z/copier-dart-frb-wrapper/compare/v2.4.0...v2.5.0
 [2.4.0]: https://github.com/djx-y-z/copier-dart-frb-wrapper/compare/v2.3.2...v2.4.0
 [2.3.2]: https://github.com/djx-y-z/copier-dart-frb-wrapper/compare/v2.3.1...v2.3.2
