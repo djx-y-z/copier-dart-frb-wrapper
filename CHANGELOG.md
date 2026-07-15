@@ -1,3 +1,9 @@
+## [Unreleased]
+
+### Fixed
+
+- **`hook/build.dart.jinja`** (gated on `enable_web`) — the web build hook now records the provisioned crate version in `web/pkg/.wasm-version` and re-downloads when it changes, instead of skipping whenever the two WASM files merely exist. Previously, upgrading the generated package kept the prior version's WASM in the consuming app's `web/pkg/` (it survives `flutter clean`), so on web any FRB entry that calls Dart store callbacks panicked with an argument-count mismatch (`called Option::unwrap() on a None value`) once the wire signature had changed between versions. The download cache is now version-keyed (`web/<version>/`), WASM files are copied unconditionally (the old mtime guard skipped a fresh-but-older source on downgrade), and `rust/Cargo.toml` is a declared web-build dependency so a version bump re-runs the hook — all mirroring the native path (which was unaffected).
+
 ## [2.5.1] - 2026-07-13
 
 ### Added
