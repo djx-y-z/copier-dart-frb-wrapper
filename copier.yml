@@ -370,6 +370,13 @@ _message_after_copy: |
       - Setup coverage badge (GIST_TOKEN, COVERAGE_GIST_ID)
       See CONTRIBUTING.md for detailed instructions
 
+  14. Harden releases (recommended for native/crypto libraries):
+      After creating the GitHub repo and pushing, apply the repository rulesets
+      + native-build environment in one command (needs `gh` as a repo admin):
+        make setup-repo-protections
+      Rulesets live as committed JSON in .github/rulesets/ (edit them there);
+      details + optional fields in .github/rulesets/README.md
+
   For more information, see {% if enable_claude %}CLAUDE.md and {% endif %}README.md
 
 _message_after_update: |

@@ -23,6 +23,15 @@ This package implements several security measures:
 
 > **Note (authenticity):** SHA256 verifies *integrity* but not *authenticity* — the checksums file ships in the same release as the archive. A detached signature (minisign/cosign) with a public key pinned in `hook/build.dart`, plus SLSA build provenance, is the recommended next step for high-assurance use.
 
+### Release & build-trigger protection
+
+The native binaries above are published by `build-{{ package_name }}.yml`, triggered by a `{{ crate_name }}-*` tag push or by manual dispatch. Two controls restrict who can cause a publish, mirroring the `pub.dev` environment that gates the pub.dev publish:
+
+- **Tag protection** — a repository ruleset restricts creating, moving, and deleting **all tags** to Admins/Maintainers (and requires them signed), so a plain `write` collaborator cannot mint a release tag (`{{ crate_name }}-*` / `v*`) or any other tag.
+- **Approval gate** — the publishing job runs in the `native-build` environment, whose required reviewers must approve before any binary is released. Unlike the tag ruleset, this also covers the `workflow_dispatch` path.
+
+Setup, the exact `gh` commands to apply / verify / roll back, and residual risks are in [`.github/rulesets/README.md`](.github/rulesets/README.md).
+
 ### Build Security
 
 - **Reproducible Builds**: CI builds are automated and reproducible

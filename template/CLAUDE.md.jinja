@@ -171,20 +171,52 @@ make build ARGS="--target aarch64-apple-darwin"
 make test
 ```
 
-## Update Crate Version
+## Release Flow (two stages)
 
-Version is stored in `rust/Cargo.toml`.
+Releasing is **two independent stages**, each with its own command and tag. The
+`{{ crate_name }}` native crate (`rust/Cargo.toml` version) and the `{{ package_name }}`
+Dart package (`pubspec.yaml` version) are versioned and released separately.
+
+- **Automated {{ native_library_name }} update PRs do NOT bump the `{{ crate_name }}`
+  crate version and do NOT build binaries** — they only update the dependency +
+  CHANGELOG. Updates accumulate on `main` (CI builds from source and tests them).
+- **The native build is triggered by pushing a `{{ crate_name }}-<version>` tag**
+  (created by `make release-frb`), not by pushing to `main`. The tag must equal the
+  `rust/Cargo.toml` crate version (the workflow validates this).
+- **Stage 1 must finish before stage 2** — the published Dart package's build hook
+  downloads the precompiled `{{ crate_name }}-<crate>` binary, so it must already
+  exist before you tag the pub.dev release.
+
+### Stage 1 — release the native crate
 
 ```bash
-# 1. Edit rust/Cargo.toml - update version
-# 2. Run tests
-make test
-
-# 3. Commit and push (CI will build native libraries)
-git add rust/Cargo.toml
-git commit -m "Bump crate version to X.Y.Z"
-git push
+# From a clean, up-to-date main. You enter your signing passphrase during the
+# command (commit + tag are signed; the terminal is inherited).
+make release-frb ARGS="--version X.Y.Z"            # bump + commit + tag + push
+make release-frb ARGS="--version X.Y.Z --no-push"  # local only
 ```
+
+Bumps `rust/Cargo.toml`, stamps the CHANGELOG highlight, signs a commit + tag
+`{{ crate_name }}-X.Y.Z`, and pushes — which triggers the native build workflow.
+Choose `X.Y.Z` by SemVer of the FFI surface (a non-empty `lib/src/rust/` codegen
+diff since the last frb release means the wire signature moved).
+
+### Stage 2 — release the Dart package
+
+```bash
+# After the stage-1 native build has finished. Same interactive signing flow.
+make release ARGS="--version X.Y.Z"   # verify frb binary + bump + finalize
+                                      # CHANGELOG + dry-run + signed commit/tag/push
+```
+
+Verifies the stage-1 `{{ crate_name }}-<crate>` release exists, bumps
+`pubspec.yaml`, finalizes the CHANGELOG (`[Unreleased]` → `[X.Y.Z]` + a fresh
+`[Unreleased]` + compare links), runs `make publish-dry-run`, then signs a commit
++ tag `vX.Y.Z` and pushes — `publish.yml` publishes to pub.dev.
+
+Repository rulesets restrict who can create the `{{ crate_name }}-*` / `v*` release
+tags, and a required-reviewer `native-build` environment gates the native publish.
+See `.github/rulesets/README.md`.
 
 ## Native Library Version
 

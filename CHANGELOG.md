@@ -1,3 +1,24 @@
+## [Unreleased]
+
+### Added
+
+- **`scripts/release.dart.jinja` + `scripts/src/release.dart.jinja` + `Makefile.jinja` (`release`)** — `make release` cuts the Dart package release (stage 2 → pub.dev): verifies the stage-1 `{{ crate_name }}-<crate>` native release exists on GitHub, bumps `pubspec.yaml`, finalizes the CHANGELOG (`[Unreleased]` → dated version + a fresh `[Unreleased]` + the bottom compare links, with the previous version and base URL derived from the existing `[Unreleased]` link), runs `make publish-dry-run`, then signs a commit + `vX.Y.Z` tag and pushes. Pure, tested `finalizeChangelog()` (`test/scripts/release_test.dart.jinja`); `getPackageVersion()` added to `common.dart.jinja`. Commit/tag/push inherit the terminal so the signing passphrase is entered interactively.
+- **`scripts/release_frb.dart.jinja` + `scripts/src/release_frb.dart.jinja` + `.claude/skills/release-frb-crate/`** — `make release-frb` cuts the native-crate release (stage 1): bumps `rust/Cargo.toml`, stamps the `{{ crate_name }}` CHANGELOG highlight, signs a commit + `{{ crate_name }}-<version>` tag, and pushes to trigger the native build. New `release-frb-crate` skill. The two release commands share git/terminal helpers in `scripts/src/release_common.dart` (no-jinja).
+- **`.github/rulesets/` + `scripts/setup_repo_protections.dart` + `Makefile.jinja` (`setup-repo-protections`)** — the branch and release-tag rulesets ship as committed JSON (source of truth, editable in-repo): `protect-main.json`, `signing-commit.json`, `delete-branches.json`, `protect-release-tags.json`. `make setup-repo-protections` applies them all via `gh` (idempotent by ruleset name; `--update` overwrites) and configures the `native-build` environment with the current user as a required reviewer. `signing-commit.json` ships with an empty bypass — a project's automation App has a per-repo Integration id, added per the runbook in `.github/rulesets/README.md`.
+- **`.github/workflows/test-reusable.yml.jinja`** — a `make check-targets` step (Linux x86_64 leg) fails CI when the iOS/macOS/Android minimum deployment targets drift out of sync across the podspecs, `Info.plist`s, xcconfigs and gradle (the checker already existed but was never run automatically).
+
+### Changed
+
+- **`scripts/src/check_updates.dart.jinja`, `scripts/src/update_changelog.dart.jinja` (+ entry points), `.github/workflows/check-{{ package_name }}-updates.yml.jinja`** — decoupled the native-crate release from dependency updates. Automated update PRs no longer bump the `{{ crate_name }}` crate version, no longer build binaries, and no longer stamp the `{{ crate_name }}` CHANGELOG highlight (all now deliberate release steps). Removed the SemVer-mirror crate bump and the AI-severity reconciliation (`_reconcileCrateVersion`, `--crate-version-before`, the `bump`/`bump_verified`/`crate_version` outputs and the `bump-unverified` label). `update_changelog` still threads `--from` into a compare link for the "Changed" entry. Dependency updates accumulate on `main` (CI builds from source and tests them).
+- **`.github/workflows/build-{{ package_name }}.yml.jinja`** — the native build now triggers on a pushed `{{ crate_name }}-*` tag (created by `make release-frb`) instead of on `push` to `main`; a step validates the tag equals the `rust/Cargo.toml` crate version. `workflow_dispatch` is retained for first-run/forced rebuilds.
+- **`.claude/skills/release-package/SKILL.md.jinja`** — rewritten around `make release` (stage 2), with the stage-1 prerequisite, versioning guidance and a manual fallback.
+- **`CLAUDE.md.jinja`, `CONTRIBUTING.md.jinja`** — a two-stage "Release Flow" (`make release-frb` → `make release`) and a "Repository rulesets & tag protection" section; **`copier.yml`** `_message_after_copy` now points new projects at `make setup-repo-protections`.
+
+### Security
+
+- **`.github/workflows/build-{{ package_name }}.yml.jinja`** — the `create-release` job (which publishes the consumer-downloaded native binaries) now runs in a `native-build` environment. Once required reviewers are configured it gates every native publish — both a `{{ crate_name }}-*` tag push **and** a `workflow_dispatch` run — behind human approval, mirroring the `pub.dev` environment that gates pub.dev publishing. A tag ruleset cannot cover the dispatch path, so this environment is the load-bearing control.
+- **`.github/rulesets/protect-release-tags.json` (+ `.github/rulesets/README.md`, `SECURITY.md.jinja`)** — a repository ruleset restricts *creating, moving and deleting* **all tags** to Admins/Maintainers and requires them signed (targets `~ALL` — the release-triggering `{{ crate_name }}-*` / `v*` are the critical subset), so a plain `write` collaborator cannot mint a release tag that triggers a native / pub.dev publish. Rationale, apply/verify/rollback commands and residual risks are documented in `.github/rulesets/README.md`.
+
 ## [2.5.2] - 2026-07-16
 
 ### Fixed
