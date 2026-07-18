@@ -12,6 +12,30 @@ If you discover a security vulnerability in {{ package_name }}, please report it
    - Potential impact
    - Suggested fix (if any)
 
+## Security Scope
+
+### In Scope
+
+This package provides Dart bindings to {{ native_library_name }} via Flutter Rust Bridge. The security scope covers:
+
+- **Memory safety** of the FRB wrapper and the hand-written Rust in `rust/src/api/`
+- **Correct API usage** of the underlying {{ native_library_name }} primitives
+- **Secret handling** across the FFI boundary (deterministic `dispose()`, keeping secrets in Rust where possible)
+- **Supply-chain integrity** of the prebuilt native binaries (build pipeline, fail-closed download verification, release/tag protections)
+
+### Out of Scope
+
+The core cryptography / functionality is implemented and maintained upstream in {{ native_library_name }} — the algorithm implementations, their constant-time / side-channel resistance, and protocol design. Report those to the upstream project (see **Upstream Security** below).
+
+### Threat Model Limitations
+
+Out of scope for this wrapper:
+
+- **Physical side-channels** (power analysis, electromagnetic emissions)
+- **Fault injection** (Rowhammer, voltage/clock glitching)
+- **Hardware vulnerabilities**
+- **Compromised host** — secrets that cross into Dart's GC heap cannot be reliably erased
+
 ## Security Measures
 
 This package implements several security measures:
