@@ -5,94 +5,60 @@ description: Build {{ native_library_name }} native libraries for different plat
 
 # Build Native Libraries
 
-Help with building {{ native_library_name }} native libraries for all supported platforms.
+Help with building the `{{ crate_name }}` native library for all supported platforms.
 
 ## Golden Rule
 
-**ALWAYS use Makefile commands. Never call scripts directly.**
+**ALWAYS use Makefile commands. Never call cargo/scripts directly.**
 
 ```bash
 # CORRECT
-make build ARGS="macos"
+make build ARGS="--target aarch64-apple-darwin"
 
 # WRONG - never do this
-fvm dart scripts/build.dart macos
+cd rust && cargo build --release
 ```
 
 ## Quick Reference
 
-| Platform | Command | Output |
-|----------|---------|--------|
-| macOS | `make build ARGS="macos"` | `bin/macos/` |
-| Linux | `make build ARGS="linux"` | `bin/linux/` |
-| Windows | `make build ARGS="windows"` | `bin/windows/` |
-| iOS | `make build ARGS="ios"` | `ios/Frameworks/` or `ios/Libraries/` |
-| Android | `make build ARGS="android"` | `android/src/main/jniLibs/` |
-| All | `make build ARGS="all"` | All platforms |
-| List | `make build ARGS="list"` | Show available platforms |
+| Command | What it builds | Output |
+|---------|----------------|--------|
+| `make build` | Current host platform (release) | `rust/target/release/` |
+| `make build ARGS="--target <rust-target>"` | Specific Rust target | `rust/target/<target>/release/` |
+| `make build-android` | All Android ABIs via cargo-ndk | `rust/target/<target>/release/` |
+| `make build-android ARGS="--target arm64-v8a"` | One Android ABI | `rust/target/<target>/release/` |
+{%- if enable_web %}
+| `make build-web` | WASM via wasm-pack | `rust/target/wasm32/` |
+{%- endif %}
 
-## Platform-Specific Options
+The library artifact is `lib{{ crate_name }}.{dylib,so}` / `{{ crate_name }}.dll`{% if enable_web %}
+(web: `{{ crate_name }}.js` + `{{ crate_name }}_bg.wasm`){% endif %}.
 
-### macOS
+There is no per-platform packaging step in this repo: consumers get precompiled
+binaries from the GitHub Release `{{ crate_name }}-<version>` via `hook/build.dart`
+(see `build-{{ package_name }}.yml` for the CI build matrix). To make a local build
+visible to the hook, create a `.skip_{{ package_name }}_hook` marker (see the header of
+`hook/build.dart`).
 
-```bash
-# Universal binary (arm64 + x86_64) - default
-make build ARGS="macos"
+## Deployment Targets
 
-# Specific architecture
-make build ARGS="macos --arch arm64"
-make build ARGS="macos --arch x86_64"
-```
-
-### iOS
-
-```bash
-# Full XCFramework (device + simulators) - default
-make build ARGS="ios"
-
-# Specific targets
-make build ARGS="ios --target device"
-make build ARGS="ios --target simulator"
-make build ARGS="ios --target simulator-arm64"
-make build ARGS="ios --target simulator-x86_64"
-```
-
-### Android
-
-```bash
-# All ABIs - default
-make build ARGS="android"
-
-# Specific ABI
-make build ARGS="android --abi arm64-v8a"
-make build ARGS="android --abi armeabi-v7a"
-make build ARGS="android --abi x86_64"
-```
-
-**Android NDK Setup:**
-```bash
-export ANDROID_NDK_HOME=/path/to/ndk/26.3.11579264
-# Or install via Android Studio SDK Manager
-```
-
-### Windows
-
-```bash
-make build ARGS="windows"
-```
-
-**Requirements:** Run from "Developer PowerShell for VS" or after `vcvars64.bat`
+Minimum OS versions are sourced from `.copier-answers.yml` and enforced with
+`make check-targets`. CI sets them via `IPHONEOS_DEPLOYMENT_TARGET`,
+`MACOSX_DEPLOYMENT_TARGET` and cargo-ndk `--platform`; `make build-android`
+reads the Android minSdk via `scripts/get_android_min_sdk.dart`.
 
 ## Prerequisites
 
 | Platform | Requirements |
 |----------|--------------|
-| All | Rust toolchain (rustup, cargo), FVM |
-| Linux | gcc/g++, cross-compilation tools for arm64 |
-| macOS | Xcode Command Line Tools |
-| iOS | Xcode (full) |
-| Android | Android NDK |
+| All | Rust toolchain (rustup, cargo){% if enable_protoc %}, protoc{% endif %}, FVM |
+| macOS / iOS | Xcode Command Line Tools (iOS: full Xcode) |
+| Android | Android NDK + `cargo-ndk` (`make setup-android`) |
+{%- if enable_web %}
+| Web | `wasm-pack` (`make setup-web`) |
+{%- endif %}
 | Windows | Visual Studio with C++ |
+| Linux | gcc/g++, cross-compilation tools for arm64 |
 
 ## Rust Targets
 
@@ -109,6 +75,9 @@ make build ARGS="windows"
 | Android arm | `armv7-linux-androideabi` |
 | Android x86_64 | `x86_64-linux-android` |
 | Windows | `x86_64-pc-windows-msvc` |
+{%- if enable_web %}
+| Web | `wasm32-unknown-unknown` |
+{%- endif %}
 
 ## Troubleshooting
 
@@ -117,23 +86,13 @@ make build ARGS="windows"
 # Install Rust toolchain
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```
-
-### "cbindgen not found"
-```bash
-cargo install cbindgen
-```
+{%- if enable_protoc %}
 
 ### "protoc not found"
 ```bash
-# macOS
-brew install protobuf
-
-# Linux
-sudo apt install protobuf-compiler
-
-# Windows
-choco install protoc
+make setup-protoc
 ```
+{%- endif %}
 
 ### "NDK not found" (Android)
 ```bash
@@ -141,8 +100,8 @@ choco install protoc
 echo $ANDROID_NDK_HOME
 
 # Common paths
-export ANDROID_NDK_HOME=~/Android/Sdk/ndk/26.3.11579264
-export ANDROID_NDK_HOME=~/Library/Android/sdk/ndk/26.3.11579264
+export ANDROID_NDK_HOME=~/Android/Sdk/ndk/{{ android_ndk_version }}
+export ANDROID_NDK_HOME=~/Library/Android/sdk/ndk/{{ android_ndk_version }}
 ```
 
 ### Build fails on Windows
@@ -156,15 +115,9 @@ export ANDROID_NDK_HOME=~/Library/Android/sdk/ndk/26.3.11579264
 # Full setup (installs all dependencies)
 make setup
 
-# Just FVM/Flutter setup
-make setup-fvm
-
-# Build dependencies only (Rust, protoc)
-make setup-build
-
-# Regenerate FFI bindings after native library update
+# Regenerate FRB bindings after Rust API changes
 make codegen
 
-# Show current {{ native_library_name }} version
+# Show current crate version
 make version
 ```

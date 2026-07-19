@@ -35,7 +35,7 @@ const _nativeAssetId = 'package:{{ package_name }}/{{ package_name }}';
 ///
 /// 1. **Custom path** (if provided via [libraryPath] parameter)
 /// 2. **Build hook locations** (JIT: .dart_tool/lib/, AOT: ../lib/)
-/// 3. **FRB default**: For Flutter apps with Cargokit
+/// 3. **FRB default**: flutter_rust_bridge's default loader
 ///
 {%- if enable_web %}
 /// ### For Web
@@ -46,7 +46,7 @@ const _nativeAssetId = 'package:{{ package_name }}/{{ package_name }}';
 {%- endif %}
 /// ### For Flutter apps
 ///
-/// Cargokit automatically builds the native library{% if enable_web %} or WASM module{% endif %}.
+/// The build hook downloads the native library{% if enable_web %} or WASM module{% endif %} automatically.
 /// No manual setup required.
 ///
 /// ### For pure Dart CLI apps
@@ -101,7 +101,7 @@ class {{ package_name | to_camel }} {
   /// Loading order:
   /// 1. Custom path (if provided via [libraryPath] parameter)
   /// 2. Build hook locations (JIT: .dart_tool/lib/, AOT: ../lib/)
-  /// 3. FRB default (Flutter with Cargokit)
+  /// 3. FRB default (flutter_rust_bridge's default loader)
   static Future<ExternalLibrary> _loadLibrary(String? customPath) async {
     // coverage:ignore-start
 {%- if enable_web %}
@@ -128,7 +128,7 @@ class {{ package_name | to_camel }} {
     }
 
     // coverage:ignore-start
-    // 3. Fall back to FRB's default loading (Flutter with Cargokit)
+    // 3. Fall back to FRB's default loading
     return await loadExternalLibrary(
       RustLib.kDefaultExternalLibraryLoaderConfig,
     );
