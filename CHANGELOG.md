@@ -11,6 +11,13 @@
 
 - **Platform-plugin scaffolding** (`template/ios/`, `template/macos/`, `template/android/`, `template/linux/`, `template/windows/`) — generated packages are plain Dart FFI packages (no `flutter: plugin:` section in `pubspec.yaml`), so flutter_tools never consumed the podspecs, the Gradle project or the CMakeLists; native delivery is via `hook/build.dart`. `.gitignore.jinja` / `.pubignore.jinja` now anchor-ignore the old platform dirs (`/ios/`, `/macos/`, …) so stale local artifacts are neither committed nor published.
 
+### Security
+
+- **Upstream tag names validated before reaching the shell** — `check_updates.dart.jinja` / `check_template_updates.dart` reject a release `tag_name` that is not a plain semver-ish tag before it lands in `GITHUB_OUTPUT`, and the two update-checker workflows pass step outputs/inputs into `run:` blocks via `env:` instead of inline `${{ }}` interpolation — closing a shell-injection path from upstream release names (backport of the liboqs audit).
+- **Least-privilege `GITHUB_TOKEN` everywhere** — `publish.yml.jinja` and `build-{{ package_name }}.yml.jinja` now default to `contents: read` with job-level opt-ups (`id-token: write` on the pub.dev publish job, `contents: write` on the release jobs); the update-checker workflows drop `contents/pull-requests: write` entirely (all writes go through the App token).
+- **Third-party actions pinned to commit SHAs** — `dart-lang/setup-dart`, `peter-evans/create-pull-request`, `android-actions/setup-android`, `ilammy/msvc-dev-cmd`, `schneegans/dynamic-badges-action`, `Swatinem/rust-cache`, `dtolnay/rust-toolchain` (toolchain now passed via the `toolchain` input since the ref no longer selects it).
+- **`setup-make` verifies gnumake.exe by SHA256** — release assets are mutable, so the size check alone did not lock the Windows make binary; a hardcoded SHA256 input (updated together with the version) now does.
+
 ### Changed
 
 - **`.github/workflows/build-{{ package_name }}.yml.jinja` (deployment targets)** — the macOS build now sets `MACOSX_DEPLOYMENT_TARGET: '{{ macos_min_version }}'` (previously rustc's per-target default) and the Android build links against the declared minSdk via cargo-ndk `--platform {{ android_min_sdk }}` (previously cargo-ndk's default), so the prebuilt binaries' minimum OS versions match the documented support table.

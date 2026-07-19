@@ -37,6 +37,10 @@ on:
     tags:
       - '{{ crate_name }}-*'
 
+# Least privilege by default; only create-release opts up to contents: write.
+permissions:
+  contents: read
+
 concurrency:
   group: build-{{ crate_name }}-${{"{{"}} github.ref {{"}}"}}
   cancel-in-progress: true
@@ -243,7 +247,7 @@ jobs:
           targets: ${{"{{"}} matrix.rust_target {{"}}"}}
 
       - name: Setup Android NDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3.2.2
 
       - name: Install NDK
         run: |
@@ -288,7 +292,7 @@ jobs:
           targets: x86_64-pc-windows-msvc
 
       - name: Setup MSVC
-        uses: ilammy/msvc-dev-cmd@v1.13.0
+        uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1.13.0
 {%- if enable_protoc %}
 
       - name: Setup Protoc
