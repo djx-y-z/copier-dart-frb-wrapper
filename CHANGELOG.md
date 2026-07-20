@@ -1,4 +1,9 @@
-## [Unreleased]
+## [3.0.0] - 2026-07-20
+
+### Changed (BREAKING)
+
+- **`.github/workflows/build-{{ package_name }}.yml.jinja` — native build trigger changed to a pushed `{{ crate_name }}-*` tag** (created by `make release-frb`) instead of `push` to `main`; a step validates the tag equals the `rust/Cargo.toml` crate version. `workflow_dispatch` is retained for first-run/forced rebuilds. **After `copier update`, existing projects must adopt the two-stage `make release-frb` → `make release` flow — native binaries no longer publish on every push to `main`.**
+- **Native-crate release decoupled from dependency updates** (`scripts/src/check_updates.dart.jinja`, `scripts/src/update_changelog.dart.jinja` + entry points, `.github/workflows/check-{{ package_name }}-updates.yml.jinja`) — automated update PRs no longer bump the `{{ crate_name }}` crate version, no longer build binaries, and no longer stamp the `{{ crate_name }}` CHANGELOG highlight (all now deliberate release steps). Removed the SemVer-mirror crate bump and the AI-severity reconciliation (`_reconcileCrateVersion`, `--crate-version-before`, the `bump`/`bump_verified`/`crate_version` outputs and the `bump-unverified` label). `update_changelog` still threads `--from` into a compare link for the "Changed" entry. Dependency updates accumulate on `main` (CI builds from source and tests them).
 
 ### Added
 
@@ -8,6 +13,23 @@
 - **`.github/workflows/test-reusable.yml.jinja`** — a `make check-targets` step (Linux x86_64 leg) fails CI when the iOS/macOS/Android minimum deployment targets drift out of sync across the CI build env vars, the example Xcode projects and the README platform table (the checker already existed but was never run automatically).
 - **`template/.github/dependabot.yml`** — Dependabot for GitHub Actions in generated projects: weekly grouped update PRs (Monday 06:00 UTC, `chore(deps)` prefix) bump the pinned actions — both the commit SHA and its `# vX.Y.Z` comment — across the workflows and the composite actions (a `directories` glob covers `/.github/actions/*`, since `/` only scans `.github/workflows/`); `dtolnay/rust-toolchain` is ignored (master-SHA pin, no versioned releases). The file is static (no `.jinja` — nothing to parameterize). Note: Dependabot does not parse the template's own `.jinja` sources — those pins remain manually synced during backports, as before.
 - **`scripts/README.md.jinja`** — the template now ships a `scripts/` index README (previously missing) documenting each dev script and its `make` command plus the "always use `make`" convention, parametrized by package / native-library name.
+
+### Changed
+
+- **`.github/workflows/build-{{ package_name }}.yml.jinja` (deployment targets)** — the macOS build now sets `MACOSX_DEPLOYMENT_TARGET: '{{ macos_min_version }}'` (previously rustc's per-target default) and the Android build links against the declared minSdk via cargo-ndk `--platform {{ android_min_sdk }}` (previously cargo-ndk's default), so the prebuilt binaries' minimum OS versions match the documented support table.
+- **`scripts/check_deployment_targets.dart.jinja`, `scripts/get_android_min_sdk.dart`** — with the platform scaffolding gone, the checker verifies the CI workflow (`IPHONEOS_DEPLOYMENT_TARGET`, `MACOSX_DEPLOYMENT_TARGET`, cargo-ndk `--platform`) instead of the podspecs/`build.gradle`, and `get_android_min_sdk.dart` reads `android_min_sdk` from `.copier-answers.yml` (the source of truth) directly.
+- **`.claude/skills/build-native/SKILL.md.jinja`** — rewritten to match the actual Makefile interface (`make build [ARGS="--target <rust-target>"]` / `build-android` / `build-web`, artifacts in `rust/target/`); it previously documented a `make build ARGS="<platform>"` interface and `bin/` / `jniLibs/` outputs that never existed in this template.
+- **`lib/src/{{ package_name }}.dart.jinja`** — loader doc comments no longer reference Cargokit (the fallback is flutter_rust_bridge's default loader; the build hook provisions the library).
+- **`.claude/skills/release-package/SKILL.md.jinja`** — rewritten around `make release` (stage 2), with the stage-1 prerequisite, versioning guidance and a manual fallback.
+- **`CLAUDE.md.jinja`, `CONTRIBUTING.md.jinja`** — a two-stage "Release Flow" (`make release-frb` → `make release`) and a "Repository rulesets & tag protection" section; **`copier.yml`** `_message_after_copy` now points new projects at `make setup-repo-protections`.
+
+### Fixed
+
+- **`scripts/src/release_frb.dart.jinja` stages `rust/Cargo.lock`** — the stage-1 release now syncs and stages the crate's own `Cargo.lock` version stanza alongside `Cargo.toml` (new `getCrateName()` in `common.dart.jinja` + `bumpCargoLockVersion()`), so the pre-commit `cargo check` no longer leaves the lock dirty (which blocked the stage-2 clean-tree preflight) and the signed `{{ crate_name }}-*` tag no longer carries a stale lock.
+- **Build hook download/cache resilience (`hook/build.dart.jinja`)** — a version-keyed cache entry is reused only after a `.download-complete` marker proves the extraction finished (no reuse of a library left truncated by an interrupted `tar`); a local `rust/target/` build is used only when it matches the target OS **and** architecture (never a host build bundled for a cross-target); the checksums fetch and binary download retry transient HTTP 5xx/429; the web path skips the checksums fetch when the cache is warm and declares the local WASM outputs + the `web/pkg` version marker as dependencies.
+- **`scripts/check_deployment_targets.dart.jinja` fails closed** — a missing checked file or a vanished pattern is now a failure (exit non-zero) instead of a silently-skipped success, so the deployment-target drift gate can't go green after a CI env var is renamed away.
+- **Release-script robustness** — `stampFrbHighlight` inserts a `### For Users` parent when the section lacks one; `runInherit` (`release_common.dart`) fails loud on any non-zero exit (previously swallowed when no message was passed); `finalizeChangelog` validates the `--date` (`YYYY-MM-DD`) before stamping the immutable released heading; and the commit-failure messages state the bump is left staged and how to recover.
+- **Rendering/docstring polish** — `LICENSE.jinja` and `rust/.cargo/config.toml.jinja` no longer render stray leading blank lines; the hook `.skip_{{ package_name }}_hook` docstring now describes the actual behavior (an internal escape that registers no asset — local builds are auto-detected without it).
 
 ### Removed
 
@@ -24,31 +46,8 @@
 - **`publish.yml.jinja` — release notes via `--notes-file`** — the version and changelog now go through `env:` and the notes are written with `printf`, so a literal `EOF` line in the changelog can no longer terminate the inline heredoc early and execute the remaining text as shell under the `contents: write` token.
 - **`build-{{ package_name }}.yml.jinja` — fail-loud release, fail-closed probe** — `create-release` no longer delete-then-recreates an existing GitHub Release (a duplicate create now fails loudly instead of silently clobbering already-published binaries that consumers' build hooks download), and `check_exists_frb_release.dart.jinja` now distinguishes exists / missing / inconclusive, aborting on an API error instead of proceeding on a false "missing".
 - **`fuzz.yml.jinja` — dispatch `duration` input validated + via `env:`** — the `workflow_dispatch` duration is rejected unless it is a positive integer and is passed to the fuzz command through `env:` instead of inline `${{ }}` interpolation, closing a shell-injection path.
-
-### Changed
-
-- **`.github/workflows/build-{{ package_name }}.yml.jinja` (deployment targets)** — the macOS build now sets `MACOSX_DEPLOYMENT_TARGET: '{{ macos_min_version }}'` (previously rustc's per-target default) and the Android build links against the declared minSdk via cargo-ndk `--platform {{ android_min_sdk }}` (previously cargo-ndk's default), so the prebuilt binaries' minimum OS versions match the documented support table.
-- **`scripts/check_deployment_targets.dart.jinja`, `scripts/get_android_min_sdk.dart`** — with the platform scaffolding gone, the checker verifies the CI workflow (`IPHONEOS_DEPLOYMENT_TARGET`, `MACOSX_DEPLOYMENT_TARGET`, cargo-ndk `--platform`) instead of the podspecs/`build.gradle`, and `get_android_min_sdk.dart` reads `android_min_sdk` from `.copier-answers.yml` (the source of truth) directly.
-- **`.claude/skills/build-native/SKILL.md.jinja`** — rewritten to match the actual Makefile interface (`make build [ARGS="--target <rust-target>"]` / `build-android` / `build-web`, artifacts in `rust/target/`); it previously documented a `make build ARGS="<platform>"` interface and `bin/` / `jniLibs/` outputs that never existed in this template.
-- **`lib/src/{{ package_name }}.dart.jinja`** — loader doc comments no longer reference Cargokit (the fallback is flutter_rust_bridge's default loader; the build hook provisions the library).
-
-- **`scripts/src/check_updates.dart.jinja`, `scripts/src/update_changelog.dart.jinja` (+ entry points), `.github/workflows/check-{{ package_name }}-updates.yml.jinja`** — decoupled the native-crate release from dependency updates. Automated update PRs no longer bump the `{{ crate_name }}` crate version, no longer build binaries, and no longer stamp the `{{ crate_name }}` CHANGELOG highlight (all now deliberate release steps). Removed the SemVer-mirror crate bump and the AI-severity reconciliation (`_reconcileCrateVersion`, `--crate-version-before`, the `bump`/`bump_verified`/`crate_version` outputs and the `bump-unverified` label). `update_changelog` still threads `--from` into a compare link for the "Changed" entry. Dependency updates accumulate on `main` (CI builds from source and tests them).
-- **`.github/workflows/build-{{ package_name }}.yml.jinja`** — the native build now triggers on a pushed `{{ crate_name }}-*` tag (created by `make release-frb`) instead of on `push` to `main`; a step validates the tag equals the `rust/Cargo.toml` crate version. `workflow_dispatch` is retained for first-run/forced rebuilds.
-- **`.claude/skills/release-package/SKILL.md.jinja`** — rewritten around `make release` (stage 2), with the stage-1 prerequisite, versioning guidance and a manual fallback.
-- **`CLAUDE.md.jinja`, `CONTRIBUTING.md.jinja`** — a two-stage "Release Flow" (`make release-frb` → `make release`) and a "Repository rulesets & tag protection" section; **`copier.yml`** `_message_after_copy` now points new projects at `make setup-repo-protections`.
-
-### Security
-
-- **`.github/workflows/build-{{ package_name }}.yml.jinja`** — the `create-release` job (which publishes the consumer-downloaded native binaries) now runs in a `native-build` environment. Once required reviewers are configured it gates every native publish — both a `{{ crate_name }}-*` tag push **and** a `workflow_dispatch` run — behind human approval, mirroring the `pub.dev` environment that gates pub.dev publishing. A tag ruleset cannot cover the dispatch path, so this environment is the load-bearing control.
+- **`.github/workflows/build-{{ package_name }}.yml.jinja` — `native-build` environment gate** — the `create-release` job (which publishes the consumer-downloaded native binaries) now runs in a `native-build` environment. Once required reviewers are configured it gates every native publish — both a `{{ crate_name }}-*` tag push **and** a `workflow_dispatch` run — behind human approval, mirroring the `pub.dev` environment that gates pub.dev publishing. A tag ruleset cannot cover the dispatch path, so this environment is the load-bearing control.
 - **`.github/rulesets/protect-release-tags.json` (+ `.github/rulesets/README.md`, `SECURITY.md.jinja`)** — a repository ruleset restricts *creating, moving and deleting* **all tags** to Admins/Maintainers and requires them signed (targets `~ALL` — the release-triggering `{{ crate_name }}-*` / `v*` are the critical subset), so a plain `write` collaborator cannot mint a release tag that triggers a native / pub.dev publish. Rationale, apply/verify/rollback commands and residual risks are documented in `.github/rulesets/README.md`.
-
-### Fixed
-
-- **`scripts/src/release_frb.dart.jinja` stages `rust/Cargo.lock`** — the stage-1 release now syncs and stages the crate's own `Cargo.lock` version stanza alongside `Cargo.toml` (new `getCrateName()` in `common.dart.jinja` + `bumpCargoLockVersion()`), so the pre-commit `cargo check` no longer leaves the lock dirty (which blocked the stage-2 clean-tree preflight) and the signed `{{ crate_name }}-*` tag no longer carries a stale lock.
-- **Build hook download/cache resilience (`hook/build.dart.jinja`)** — a version-keyed cache entry is reused only after a `.download-complete` marker proves the extraction finished (no reuse of a library left truncated by an interrupted `tar`); a local `rust/target/` build is used only when it matches the target OS **and** architecture (never a host build bundled for a cross-target); the checksums fetch and binary download retry transient HTTP 5xx/429; the web path skips the checksums fetch when the cache is warm and declares the local WASM outputs + the `web/pkg` version marker as dependencies.
-- **`scripts/check_deployment_targets.dart.jinja` fails closed** — a missing checked file or a vanished pattern is now a failure (exit non-zero) instead of a silently-skipped success, so the deployment-target drift gate can't go green after a CI env var is renamed away.
-- **Release-script robustness** — `stampFrbHighlight` inserts a `### For Users` parent when the section lacks one; `runInherit` (`release_common.dart`) fails loud on any non-zero exit (previously swallowed when no message was passed); `finalizeChangelog` validates the `--date` (`YYYY-MM-DD`) before stamping the immutable released heading; and the commit-failure messages state the bump is left staged and how to recover.
-- **Rendering/docstring polish** — `LICENSE.jinja` and `rust/.cargo/config.toml.jinja` no longer render stray leading blank lines; the hook `.skip_{{ package_name }}_hook` docstring now describes the actual behavior (an internal escape that registers no asset — local builds are auto-detected without it).
 
 ## [2.5.2] - 2026-07-16
 
@@ -570,6 +569,8 @@
 - Security policy template
 - Git hooks for pre-commit checks
 
+[Unreleased]: https://github.com/djx-y-z/copier-dart-frb-wrapper/compare/v3.0.0...HEAD
+[3.0.0]: https://github.com/djx-y-z/copier-dart-frb-wrapper/compare/v2.5.2...v3.0.0
 [2.5.2]: https://github.com/djx-y-z/copier-dart-frb-wrapper/compare/v2.5.1...v2.5.2
 [2.5.1]: https://github.com/djx-y-z/copier-dart-frb-wrapper/compare/v2.5.0...v2.5.1
 [2.5.0]: https://github.com/djx-y-z/copier-dart-frb-wrapper/compare/v2.4.0...v2.5.0
