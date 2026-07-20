@@ -52,7 +52,7 @@ jobs:
           toolchain: nightly
 
       - name: Cache Rust dependencies
-        uses: Swatinem/rust-cache@42dc69e1aa15d09112580998cf2ef0119e2e91ae # v2.9.1
+        uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
         with:
           workspaces: |
             rust -> target
@@ -64,11 +64,22 @@ jobs:
 
       - name: Determine run duration
         id: duration
+        env:
+          EVENT_NAME: ${{"{{"}} github.event_name {{"}}"}}
+          DURATION_INPUT: ${{"{{"}} github.event.inputs.duration {{"}}"}}
         run: |
-          if [ "${{"{{"}} github.event_name {{"}}"}}" = "pull_request" ]; then
+          if [ "$EVENT_NAME" = "pull_request" ]; then
             echo "seconds=60" >> "$GITHUB_OUTPUT"
-          elif [ "${{"{{"}} github.event_name {{"}}"}}" = "workflow_dispatch" ]; then
-            echo "seconds=${{"{{"}} github.event.inputs.duration {{"}}"}}" >> "$GITHUB_OUTPUT"
+          elif [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            # Validate the dispatch input: digits only, so it can never inject
+            # shell text (it flows into the fuzz command below).
+            case "$DURATION_INPUT" in
+              ''|*[!0-9]*)
+                echo "::error::duration must be a positive integer (got '$DURATION_INPUT')"
+                exit 1
+                ;;
+            esac
+            echo "seconds=$DURATION_INPUT" >> "$GITHUB_OUTPUT"
           else
             echo "seconds=600" >> "$GITHUB_OUTPUT"
           fi
@@ -84,6 +95,8 @@ jobs:
           fi
 
       - name: Build and run all fuzz targets
+        env:
+          SECONDS_TOTAL: ${{"{{"}} steps.duration.outputs.seconds {{"}}"}}
         run: |
           cd rust
           cargo +nightly fuzz build
@@ -93,7 +106,7 @@ jobs:
             # input is aborted and reported rather than running until the job's
             # hard timeout (-max_total_time only bounds the loop between inputs).
             cargo +nightly fuzz run "$target" -- \
-              -max_total_time=${{"{{"}} steps.duration.outputs.seconds {{"}}"}} \
+              -max_total_time="$SECONDS_TOTAL" \
               -timeout=30 \
               -rss_limit_mb=4096
             echo "::endgroup::"

@@ -1,11 +1,11 @@
-{%- if enable_web %}
+{%- if enable_web -%}
 # Configuration for WASM builds
 # See: https://docs.rs/getrandom/latest/getrandom/#webassembly-support
 
 [target.wasm32-unknown-unknown]
 # Enable getrandom's wasm_js backend for browser randomness
 rustflags = ['--cfg', 'getrandom_backend="wasm_js"']
-{%- else %}
+{%- else -%}
 # Rust cargo configuration
 # Add platform-specific settings here if needed
 {%- endif %}
