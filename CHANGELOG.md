@@ -1,3 +1,9 @@
+## [3.0.1] - 2026-07-20
+
+### Fixed
+
+- **`scripts/src/release.dart.jinja` — `make release` runs the pub.dev dry-run *before* the version bump** — `dart pub publish --dry-run` exits non-zero (65) on *any* warning (observed on Dart SDK 3.10.3), and the stage-2 release ran it on the bumped-but-uncommitted tree, which self-inflicts a "checked-in files are modified in git" warning — so `make release` aborted with `publish-dry-run reported errors` before it could commit, on every release. The dry-run now runs on the clean, pre-bump tree; it only validates package *structure* (files present, archive size, pubspec validity), which a version bump or CHANGELOG edit cannot change, so validation keeps identical catching power without the self-inflicted failure. The now-dead `try/catch … checkout` revert around the dry-run is removed.
+
 ## [3.0.0] - 2026-07-20
 
 ### Changed (BREAKING)

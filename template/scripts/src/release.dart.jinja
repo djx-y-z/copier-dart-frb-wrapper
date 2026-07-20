@@ -129,6 +129,19 @@ Future<void> releasePackage({
     }
   }
 
+  // ---- Validate (pub.dev dry-run) ------------------------------------------
+  // Runs on the CLEAN, pre-bump tree. `dart pub publish --dry-run` exits non-zero
+  // (65) on ANY warning, and dry-running the bumped-but-uncommitted tree would
+  // itself raise a "checked-in files are modified in git" warning — a
+  // self-inflicted failure. The dry-run only validates package structure (files
+  // present, archive size, pubspec validity), which a version bump / CHANGELOG
+  // edit cannot change, so validating before the bump has identical catching
+  // power. Nothing is modified yet, so there is nothing to revert on failure.
+  logStep('Validating the package (make publish-dry-run)...');
+  await runInherit('make', [
+    'publish-dry-run',
+  ], failMessage: 'publish-dry-run reported errors');
+
   // ---- Prepare files -------------------------------------------------------
   logStep('Bumping pubspec.yaml version: $current -> $version');
   _bumpPubspecVersion(packageDir, version);
@@ -144,21 +157,6 @@ Future<void> releasePackage({
     'pubspec.yaml',
     'CHANGELOG.md',
   ]);
-
-  // ---- Validate (pub.dev dry-run) ------------------------------------------
-  // Runs on the bumped-but-uncommitted tree. pub warns about the not-yet-tracked
-  // release-tooling files but exits 0 on warnings; only a real error (invalid
-  // pubspec, missing files, oversized package) exits non-zero and aborts here.
-  logStep('Validating the package (make publish-dry-run)...');
-  try {
-    await runInherit('make', [
-      'publish-dry-run',
-    ], failMessage: 'publish-dry-run reported errors');
-  } catch (e) {
-    await git(['checkout', '--', 'pubspec.yaml', 'CHANGELOG.md']);
-    logWarn('Reverted pubspec.yaml and CHANGELOG.md.');
-    rethrow;
-  }
 
   // ---- Confirm -------------------------------------------------------------
   final action = push
