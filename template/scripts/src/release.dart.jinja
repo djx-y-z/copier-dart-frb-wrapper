@@ -238,18 +238,22 @@ void _finalizeChangelogFile(Directory packageDir, String version, String date) {
 /// [date] (YYYY-MM-DD). Pure; exposed for testing.
 ///
 /// Three edits:
-///  1. Renames the `## [Unreleased]` heading to `## [version] - date`, leaving
-///     a fresh empty `## [Unreleased]` above it (in-progress content becomes the
-///     released section).
+///  1. Renames the `## [Unreleased]` heading to `## [version] - date` in place
+///     (in-progress content becomes the released section). No empty
+///     `## [Unreleased]` is left behind — the next unreleased change recreates it
+///     (`stampFrbHighlight` / the native-update PR both create it when absent).
 ///  2. Rewrites the bottom `[Unreleased]:` compare link to span
 ///     `v<version>...HEAD`.
 ///  3. Inserts a `[version]:` compare link spanning `v<previous>...v<version>`.
 ///
 /// The previous version and the repo base URL are read from the existing
 /// `[Unreleased]:` link — the single source of truth for the compare range — so
-/// the function needs no repo slug. Throws if the CHANGELOG lacks a
-/// `## [Unreleased]` heading or an `[Unreleased]:` compare link, or already has a
-/// `## [version]` section.
+/// the function needs no repo slug. That footer `[Unreleased]:` link is
+/// intentionally retained even though no `## [Unreleased]` heading references it
+/// between releases: it is load-bearing (this function and the section-creating
+/// scripts read it), so do NOT delete it as "stale". Throws if the CHANGELOG
+/// lacks a `## [Unreleased]` heading or an `[Unreleased]:` compare link, or
+/// already has a `## [version]` section.
 String finalizeChangelog(
   String content, {
   required String version,
@@ -306,13 +310,10 @@ String finalizeChangelog(
   lines[linkIdx] = '[Unreleased]: $base/compare/v$version...HEAD';
   lines.insert(linkIdx + 1, '[$version]: $base/compare/v$previous...v$version');
 
-  // Then split the single `## [Unreleased]` heading into a fresh empty
-  // [Unreleased] followed by the finalized `## [version] - date` heading.
-  lines.replaceRange(unreleasedIdx, unreleasedIdx + 1, [
-    '## [Unreleased]',
-    '',
-    '## [$version] - $date',
-  ]);
+  // Rename the `## [Unreleased]` heading to the finalized `## [version] - date`
+  // heading in place. No fresh empty [Unreleased] is emitted — the next
+  // unreleased change recreates it (the footer `[Unreleased]:` link stays).
+  lines[unreleasedIdx] = '## [$version] - $date';
 
   return lines.join('\n');
 }

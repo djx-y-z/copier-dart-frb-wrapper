@@ -91,8 +91,9 @@ What it does:
   2. Verifies the stage-1 native release {{ crate_name }}-<crate version> exists
      on GitHub Releases (the published build hook downloads it).
   3. Bumps the version in pubspec.yaml.
-  4. Finalizes CHANGELOG: [Unreleased] -> [X.Y.Z] - <date>, adds a fresh empty
-     [Unreleased], and updates the compare links at the bottom.
+  4. Finalizes CHANGELOG: [Unreleased] -> [X.Y.Z] - <date> and updates the
+     compare links at the bottom (no empty [Unreleased] is left behind — the
+     next unreleased change recreates it).
   5. Validates the package with `make publish-dry-run`.
   6. Creates a SIGNED commit and SIGNED tag "vX.Y.Z" (you enter your passphrase
      during the command).

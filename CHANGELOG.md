@@ -1,3 +1,13 @@
+## [3.0.2] - 2026-07-21
+
+### Changed
+
+- **`make release` no longer leaves an empty `## [Unreleased]` heading behind** (`scripts/src/release.dart.jinja`, `finalizeChangelog`) — finalizing a release now renames `## [Unreleased]` to `## [X.Y.Z] - <date>` *in place* instead of splitting it into a fresh empty `## [Unreleased]` plus the dated heading, so the released version sits at the top of the CHANGELOG with no empty section above it. The footer `[Unreleased]:` compare link is **intentionally retained** (rewritten to `vX.Y.Z...HEAD`): it is the single source of truth for the base URL + previous version that `finalizeChangelog` and the section-creating scripts read, and the next unreleased change recreates the `## [Unreleased]` heading. Docs (`CLAUDE.md.jinja`, `CONTRIBUTING.md.jinja`, `release-package` skill) and the `finalizeChangelog` docstring updated; the load-bearing footer link is now documented so it is not deleted as "stale".
+
+### Fixed
+
+- **The native-update auto-PR recreates `## [Unreleased]` when it is absent** (`scripts/src/update_changelog.dart.jinja`) — with the change above, the normal post-release state has no `## [Unreleased]` heading, so an automated dependency-update PR now lands on the "create the section" path first. That path already existed (`_createUnreleasedSection`) but was near-dead and untested; `_insertChangelogEntry` is renamed to the public `insertChangelogEntry` (pure; exposed for testing) and covered by new `test/scripts/update_changelog_test.dart.jinja` (absent → create, present → insert-without-duplication). `finalizeChangelog`'s test for the empty section is inverted accordingly.
+
 ## [3.0.1] - 2026-07-20
 
 ### Fixed
