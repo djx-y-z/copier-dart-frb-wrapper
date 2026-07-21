@@ -22,9 +22,10 @@ import 'release_common.dart';
 
 /// Cut a Dart package release for [version] (plain `X.Y.Z`).
 ///
-/// Verifies the stage-1 native release exists, bumps `pubspec.yaml`, finalizes
-/// the CHANGELOG, runs `make publish-dry-run`, creates a signed commit + signed
-/// tag `vX.Y.Z`, and (unless [push] is false) pushes `main` and the tag. Prompts
+/// Verifies the stage-1 native release exists, runs `make publish-dry-run` (on
+/// the clean, pre-bump tree), bumps `pubspec.yaml`, finalizes the CHANGELOG,
+/// creates a signed commit + signed tag `vX.Y.Z`, and (unless [push] is false)
+/// pushes `main` and the tag. Prompts
 /// for confirmation before committing unless [assumeYes]. Set [skipFrbCheck]
 /// only if you have manually verified the native binary exists. [date] defaults
 /// to today (YYYY-MM-DD) and is used for the CHANGELOG heading.

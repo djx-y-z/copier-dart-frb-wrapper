@@ -148,11 +148,12 @@ are versioned and released separately.
    ```bash
    make release ARGS="--version X.Y.Z"
    ```
-   Verifies the stage-1 `{{ crate_name }}-<crate>` release exists, bumps
-   `pubspec.yaml`, finalizes the CHANGELOG (`[Unreleased]` → `[X.Y.Z]` + compare
-   links; no empty `[Unreleased]` is left behind — the next unreleased change
-   recreates it), validates with a publish dry-run, then creates a **signed**
-   commit + tag `vX.Y.Z` and pushes. `publish.yml` publishes to pub.dev.
+   Verifies the stage-1 `{{ crate_name }}-<crate>` release exists, validates with
+   a publish dry-run (on the clean, pre-bump tree), bumps `pubspec.yaml`,
+   finalizes the CHANGELOG (`[Unreleased]` → `[X.Y.Z]` + compare links; no empty
+   `[Unreleased]` is left behind — the next unreleased change recreates it), then
+   creates a **signed** commit + tag `vX.Y.Z` and pushes. `publish.yml` publishes
+   to pub.dev.
 
    > **Do not delete the footer `[Unreleased]:` compare link** even when no
    > `## [Unreleased]` heading is present between releases — it is load-bearing

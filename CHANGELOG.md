@@ -7,6 +7,7 @@
 ### Fixed
 
 - **The native-update auto-PR recreates `## [Unreleased]` when it is absent** (`scripts/src/update_changelog.dart.jinja`) — with the change above, the normal post-release state has no `## [Unreleased]` heading, so an automated dependency-update PR now lands on the "create the section" path first. That path already existed (`_createUnreleasedSection`) but was near-dead and untested; `_insertChangelogEntry` is renamed to the public `insertChangelogEntry` (pure; exposed for testing) and covered by new `test/scripts/update_changelog_test.dart.jinja` (absent → create, present → insert-without-duplication). `finalizeChangelog`'s test for the empty section is inverted accordingly.
+- **Docs describe the stage-2 step order correctly** (`CLAUDE.md.jinja`, `CONTRIBUTING.md.jinja`, `Makefile.jinja`, `scripts/release.dart.jinja` docstring + `--help`, `release-package` skill) — every description of `make release` now lists the `make publish-dry-run` validation *before* the `pubspec.yaml` bump and CHANGELOG finalize, matching the actual order since v3.0.1 (the dry-run runs on the clean, pre-bump tree). Stale references to a "fresh empty `## [Unreleased]` left by a package release" in `release_frb.dart.jinja` and `release_frb_test.dart.jinja` comments were corrected too.
 
 ## [3.0.1] - 2026-07-20
 
