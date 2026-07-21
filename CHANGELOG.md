@@ -1,3 +1,15 @@
+## [Unreleased]
+
+### Fixed
+
+- **`description` is quoted and escaped in generated manifests** (`template/pubspec.yaml.jinja`, `template/rust/Cargo.toml.jinja`) — the description was emitted as an unquoted YAML plain scalar, so any value containing `": "` (e.g. `"messaging: 1:1"`) produced an unparseable `pubspec.yaml` and killed the post-generation `flutter create` tasks, leaving a half-generated project with `.git` already initialized. Both manifests now emit a double-quoted string with `\` and `"` escaped (the same escaping is valid for YAML and TOML). Found while generating enigma_dart.
+- **Freshly generated projects pass `make analyze`** (`template/test/{{ package_name }}_test.dart.jinja`) — the two imports were emitted in a fixed order (`package:test` first), but the `directives_ordering` lint wants package imports sorted by URI, so the correct order depends on how `package_name` compares to `"test"` (e.g. `package:enigma` must come first, `package:zebra` last). The template now orders the imports conditionally on the package name.
+- **`cargo check` / `make rust-check` work before the first codegen run** (`template/rust/src/frb_generated.rs`) — `lib.rs` declares `mod frb_generated;` but the file only existed after `make codegen`, so a freshly generated project failed `cargo check` with E0583. A placeholder file (overwritten by codegen) ships with the template.
+
+### Added
+
+- **freezed toolchain preinstalled with working version bounds** (`template/pubspec.yaml.jinja`) — the first data-carrying enum/struct in the FRB API makes codegen emit freezed sealed classes and fail with `MissingDep: Please add freezed to your dev_dependencies`. The template now ships `freezed_annotation ^3.0.0` (dependencies) plus `freezed >=3.0.0 <3.2.6` and `build_runner >=2.4.0 <2.6.0` (dev_dependencies). The upper bounds are load-bearing: pub resolves `freezed ^3.0.0` to the `3.2.6-dev.1` prerelease, which fails flutter_rust_bridge_codegen's dependency version check, and `build_runner >=2.6` AOT-compiles builders via `dart compile`, which refuses to run in packages using native build hooks (`hook/build.dart`) — both discovered while wiring enigma_dart's typed `EnigmaError`.
+
 ## [3.0.3] - 2026-07-21
 
 ### Fixed

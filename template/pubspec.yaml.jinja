@@ -1,5 +1,8 @@
 name: {{ package_name }}
-description: {{ description }}
+{# Quote + escape: an unquoted plain scalar breaks on ": " and other YAML
+   metacharacters in the description (e.g. "messaging: 1:1"), which then
+   kills the post-generation `flutter create` tasks. -#}
+description: "{{ description | replace('\\', '\\\\') | replace('"', '\\"') }}"
 
 version: 1.0.0
 license: {{ license }}
@@ -17,6 +20,9 @@ dependencies:
   # Build hooks for automatic native library download
   hooks: ^1.0.0
   code_assets: ^1.0.0
+  # Data-carrying enums/structs in the FRB API are generated as freezed
+  # sealed classes
+  freezed_annotation: ^3.0.0
 
 dev_dependencies:
   lints: ^6.0.0
@@ -24,6 +30,13 @@ dev_dependencies:
   coverage: ^1.15.0
   # Required by flutter_rust_bridge_codegen
   ffigen: ^20.0.0
+  # Required by the FRB-generated freezed sealed classes. Upper bound:
+  # 3.2.6-dev prereleases fail flutter_rust_bridge_codegen's dependency
+  # version check.
+  freezed: ">=3.0.0 <3.2.6"
+  # Upper bound: build_runner >=2.6 AOT-compiles builders via `dart compile`,
+  # which rejects packages using native build hooks (hook/build.dart).
+  build_runner: ">=2.4.0 <2.6.0"
 
 platforms:
   android:

@@ -1,5 +1,12 @@
+{#- The `directives_ordering` lint wants package imports sorted by URI, so
+    which import comes first depends on how package_name compares to "test". -#}
+{%- if package_name < 'test' -%}
+import 'package:{{ package_name }}/{{ package_name }}.dart';
+import 'package:test/test.dart';
+{%- else -%}
 import 'package:test/test.dart';
 import 'package:{{ package_name }}/{{ package_name }}.dart';
+{%- endif %}
 
 void main() {
   group('{{ package_name | to_camel }}', () {
