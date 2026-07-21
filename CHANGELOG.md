@@ -1,3 +1,9 @@
+## [3.0.3] - 2026-07-21
+
+### Fixed
+
+- **`make release-frb` / `make release` no longer abort on an unrelated diverged tag** (`scripts/src/release_frb.dart.jinja`, `scripts/src/release.dart.jinja`) — the release preconditions ran `git fetch origin --tags --quiet` but never used the fetched tags: the "tag already on origin?" check queries origin directly with `git ls-remote`, and the behind/ahead check only needs `origin/main`. So a single diverged tag anywhere in the namespace (a local-vs-remote object mismatch, e.g. an old release tag) made the fetch exit non-zero and aborted the release for a reason unrelated to it. Narrowed to `git fetch origin main --no-tags --quiet`, which refreshes `origin/main` for the behind/ahead check and cannot fail on tag divergence; behaviour is otherwise identical.
+
 ## [3.0.2] - 2026-07-21
 
 ### Changed
