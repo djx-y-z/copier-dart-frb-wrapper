@@ -135,6 +135,42 @@ from the signature. What a lost or rolled-back write actually costs is
 protocol-specific, so document that price in the package's own `SECURITY.md`
 rather than here.
 
+### Callbacks Are Not Failable
+
+A `DartFnFuture<T>` has no error channel. If the Dart closure throws, FRB does
+**not** turn it into a `Result` the Rust side can handle — it panics the worker
+thread:
+
+```
+thread 'tokio-rt-worker' panicked at src/frb_generated.rs:
+Dart throws exception but Rust side assume it is not failable: <the error>
+```
+
+This does not mirror Error Handling below, and the asymmetry is easy to assume
+away: a `Result<T, String>` returned *from* Rust becomes a clean Dart exception,
+but an exception thrown *into* Rust from a callback is a panic. Nothing in the
+signature says so, and nothing fails at compile time.
+
+Two consequences:
+
+1. **Document that callbacks must not throw**, and say it on the Dart-facing
+   interface — the implementer is the one who has to honour it.
+2. **A callback cannot act as a veto.** To let the Dart side reject something,
+   give the callback a return type that expresses rejection, so Rust decides:
+
+   ```rust
+   // Cannot work: the Dart side has no way to signal "no" but to throw.
+   check: impl Fn(Vec<u8>) -> DartFnFuture<()> + Send + Sync + 'static,
+
+   // Works: the Dart side reports, the Rust side branches on it.
+   check: impl Fn(Vec<u8>) -> DartFnFuture<bool> + Send + Sync + 'static,
+   ```
+
+Note that a write-back callback invoked *after* the operation's real work is
+done cannot abort that work whatever it returns — the result already exists. If
+a check has to be able to stop an operation, it must run before it, which
+usually means a read callback rather than a write one.
+
 ### Bridging Sync Traits to Async Callbacks
 
 If the upstream crate has sync trait methods but DartFn is async, use `futures::executor::block_on()`:
@@ -222,6 +258,10 @@ pub fn deserialize(bytes: Vec<u8>) -> Result<Self, String> {
 ```
 
 FRB automatically converts `Result<T, String>` to Dart exceptions.
+
+This works in one direction only. A Dart exception thrown *into* Rust from a
+DartFn callback is not converted — it panics the worker thread. See "Callbacks
+Are Not Failable" above before designing a callback that needs to reject.
 
 ## Memory Management
 
