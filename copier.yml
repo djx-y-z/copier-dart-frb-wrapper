@@ -342,35 +342,41 @@ _message_after_copy: |
   5. Build native libraries:
      make build
 
-  6. Verify everything works:
+  6. Generate the third-party notice inventory (needs step 5's Cargo.lock):
+     make third-party-notices
+     A fresh package has no THIRD_PARTY_NOTICES.txt, and CI verifies the
+     committed file against the dependency graph, so the first CI run fails
+     until you generate and commit it. `make rust-update` regenerates it too.
+
+  7. Verify everything works:
      make analyze         # Dart static analysis (should be clean)
      make rust-check      # Rust type check
      make test            # Run tests (should pass)
 
-  7. Implement your Rust API in rust/src/api/
+  8. Implement your Rust API in rust/src/api/
      Add your FRB-annotated functions here
 
-  8. Regenerate bindings after Rust changes:
+  9. Regenerate bindings after Rust changes:
      make codegen
 
-  9. Implement your Dart API in lib/src/
+  10. Implement your Dart API in lib/src/
 
-  10. Update example apps in example/ and example_cli/
+  11. Update example apps in example/ and example_cli/
 
-  11. Write tests in test/ directory
+  12. Write tests in test/ directory
       See test/{{ package_name }}_test.dart for template
 
-  12. Customize package metadata:
+  13. Customize package metadata:
       - Update topics in pubspec.yaml if needed
       - Add topics in GitHub repository settings
       - Review and update SECURITY.md with your contact information
 
-  13. Configure GitHub Actions:
+  14. Configure GitHub Actions:
       - Create GitHub App for signed commits (APP_ID, APP_PRIVATE_KEY)
       - Setup coverage badge (GIST_TOKEN, COVERAGE_GIST_ID)
       See CONTRIBUTING.md for detailed instructions
 
-  14. Harden releases (recommended for native/crypto libraries):
+  15. Harden releases (recommended for native/crypto libraries):
       After creating the GitHub repo and pushing, apply the repository rulesets
       + native-build environment in one command (needs `gh` as a repo admin):
         make setup-repo-protections

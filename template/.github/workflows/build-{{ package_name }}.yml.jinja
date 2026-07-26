@@ -93,6 +93,20 @@ jobs:
           fi
           echo "Tag matches crate version: $CRATE_VERSION"
 
+      # Every archive built below embeds THIRD_PARTY_NOTICES.txt, so the
+      # committed copy must match the dependency graph these binaries are built
+      # from. `make release-frb` checks this too, but a tag pushed by hand does
+      # not go through it — and a published release cannot be taken back.
+      # Checked here rather than at archive time so a stale inventory fails in
+      # a minute instead of after the whole build matrix.
+      - name: Setup Rust
+        if: steps.check.outputs.skip != 'true'
+        uses: ./.github/actions/setup-rust
+
+      - name: Verify third-party notices
+        if: steps.check.outputs.skip != 'true'
+        run: make verify-third-party-notices
+
   # ============================================
   # Linux (x86_64 + arm64 on separate runners)
   # ============================================
@@ -414,48 +428,58 @@ jobs:
           VERSION=${{"{{"}} env.VERSION {{"}}"}}
           mkdir -p release-archives
 
+          # Every archive distributes the native binary, so it must carry the
+          # licence of this package plus the attribution for the Rust crates
+          # statically linked into it. THIRD_PARTY_NOTICES.txt was verified
+          # against the dependency graph by the check-release job before any of
+          # these binaries were built, so the committed copy is authoritative
+          # here.
+          for dir in artifacts/*/; do
+            cp LICENSE THIRD_PARTY_NOTICES.txt "$dir"
+          done
+
           # Linux x86_64
           tar -czvf release-archives/{{ crate_name }}-${VERSION}-linux-x86_64.tar.gz \
-            -C artifacts/{{ package_name }}-linux-x86_64 lib{{ crate_name }}.so
+            -C artifacts/{{ package_name }}-linux-x86_64 lib{{ crate_name }}.so LICENSE THIRD_PARTY_NOTICES.txt
 
           # Linux arm64
           tar -czvf release-archives/{{ crate_name }}-${VERSION}-linux-arm64.tar.gz \
-            -C artifacts/{{ package_name }}-linux-arm64 lib{{ crate_name }}.so
+            -C artifacts/{{ package_name }}-linux-arm64 lib{{ crate_name }}.so LICENSE THIRD_PARTY_NOTICES.txt
 
           # macOS arm64
           tar -czvf release-archives/{{ crate_name }}-${VERSION}-macos-arm64.tar.gz \
-            -C artifacts/{{ package_name }}-macos-arm64 lib{{ crate_name }}.dylib
+            -C artifacts/{{ package_name }}-macos-arm64 lib{{ crate_name }}.dylib LICENSE THIRD_PARTY_NOTICES.txt
 
           # macOS x86_64
           tar -czvf release-archives/{{ crate_name }}-${VERSION}-macos-x86_64.tar.gz \
-            -C artifacts/{{ package_name }}-macos-x86_64 lib{{ crate_name }}.dylib
+            -C artifacts/{{ package_name }}-macos-x86_64 lib{{ crate_name }}.dylib LICENSE THIRD_PARTY_NOTICES.txt
 
           # Windows x86_64
           tar -czvf release-archives/{{ crate_name }}-${VERSION}-windows-x86_64.tar.gz \
-            -C artifacts/{{ package_name }}-windows-x86_64 {{ crate_name }}.dll
+            -C artifacts/{{ package_name }}-windows-x86_64 {{ crate_name }}.dll LICENSE THIRD_PARTY_NOTICES.txt
 
           # Android ABIs
           for abi in arm64-v8a armeabi-v7a x86_64; do
             tar -czvf release-archives/{{ crate_name }}-${VERSION}-android-${abi}.tar.gz \
-              -C artifacts/{{ package_name }}-android-${abi} lib{{ crate_name }}.so
+              -C artifacts/{{ package_name }}-android-${abi} lib{{ crate_name }}.so LICENSE THIRD_PARTY_NOTICES.txt
           done
 
           # iOS device arm64
           tar -czvf release-archives/{{ crate_name }}-${VERSION}-ios-device-arm64.tar.gz \
-            -C artifacts/{{ package_name }}-ios-device-arm64 lib{{ crate_name }}.dylib
+            -C artifacts/{{ package_name }}-ios-device-arm64 lib{{ crate_name }}.dylib LICENSE THIRD_PARTY_NOTICES.txt
 
           # iOS simulator arm64
           tar -czvf release-archives/{{ crate_name }}-${VERSION}-ios-simulator-arm64.tar.gz \
-            -C artifacts/{{ package_name }}-ios-simulator-arm64 lib{{ crate_name }}.dylib
+            -C artifacts/{{ package_name }}-ios-simulator-arm64 lib{{ crate_name }}.dylib LICENSE THIRD_PARTY_NOTICES.txt
 
           # iOS simulator x86_64
           tar -czvf release-archives/{{ crate_name }}-${VERSION}-ios-simulator-x86_64.tar.gz \
-            -C artifacts/{{ package_name }}-ios-simulator-x86_64 lib{{ crate_name }}.dylib
+            -C artifacts/{{ package_name }}-ios-simulator-x86_64 lib{{ crate_name }}.dylib LICENSE THIRD_PARTY_NOTICES.txt
 {%- if enable_web %}
 
           # WebAssembly
           tar -czvf release-archives/{{ crate_name }}-${VERSION}-wasm32.tar.gz \
-            -C artifacts/{{ package_name }}-wasm32 {{ crate_name }}.js {{ crate_name }}_bg.wasm
+            -C artifacts/{{ package_name }}-wasm32 {{ crate_name }}.js {{ crate_name }}_bg.wasm LICENSE THIRD_PARTY_NOTICES.txt
 {%- endif %}
 
           # Generate SHA256 checksums
