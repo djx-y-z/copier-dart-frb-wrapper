@@ -68,7 +68,7 @@ jobs:
 {%- endif %}
       skip: ${{"{{"}} steps.check.outputs.skip {{"}}"}}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Setup FVM and Flutter
         uses: ./.github/actions/setup-fvm
@@ -124,7 +124,7 @@ jobs:
             rust_target: aarch64-unknown-linux-gnu
     runs-on: ${{"{{"}} matrix.runner {{"}}"}}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Setup Rust
         uses: ./.github/actions/setup-rust
@@ -142,7 +142,7 @@ jobs:
           cargo build --release --target ${{"{{"}} matrix.rust_target {{"}}"}}
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: {{ package_name }}-linux-${{"{{"}} matrix.arch {{"}}"}}
           path: rust/target/${{"{{"}} matrix.rust_target {{"}}"}}/release/lib{{ crate_name }}.so
@@ -164,7 +164,7 @@ jobs:
             rust_target: x86_64-apple-darwin
     runs-on: ${{"{{"}} matrix.runner {{"}}"}}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Setup Rust
         uses: ./.github/actions/setup-rust
@@ -187,7 +187,7 @@ jobs:
           cargo build --release --target ${{"{{"}} matrix.rust_target {{"}}"}}
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: {{ package_name }}-macos-${{"{{"}} matrix.arch {{"}}"}}
           path: rust/target/${{"{{"}} matrix.rust_target {{"}}"}}/release/lib{{ crate_name }}.dylib
@@ -215,7 +215,7 @@ jobs:
             rust_target: x86_64-apple-ios
     runs-on: ${{"{{"}} matrix.runner {{"}}"}}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Setup Rust
         uses: ./.github/actions/setup-rust
@@ -238,7 +238,7 @@ jobs:
           cargo build --release --target ${{"{{"}} matrix.rust_target {{"}}"}}
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: {{ package_name }}-ios-${{"{{"}} matrix.target {{"}}"}}-${{"{{"}} matrix.arch {{"}}"}}
           path: rust/target/${{"{{"}} matrix.rust_target {{"}}"}}/release/lib{{ crate_name }}.dylib
@@ -260,7 +260,7 @@ jobs:
           - abi: x86_64
             rust_target: x86_64-linux-android
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Setup Rust
         uses: ./.github/actions/setup-rust
@@ -268,7 +268,7 @@ jobs:
           targets: ${{"{{"}} matrix.rust_target {{"}}"}}
 
       - name: Setup Android NDK
-        uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3.2.2
+        uses: android-actions/setup-android@40fd30fb8d7440372e1316f5d1809ec01dcd3699 # v4.0.1
 
       - name: Install NDK
         run: |
@@ -292,7 +292,7 @@ jobs:
           cargo ndk -t ${{"{{"}} matrix.rust_target {{"}}"}} --platform {{ android_min_sdk }} build --release
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: {{ package_name }}-android-${{"{{"}} matrix.abi {{"}}"}}
           path: rust/target/${{"{{"}} matrix.rust_target {{"}}"}}/release/lib{{ crate_name }}.so
@@ -305,7 +305,7 @@ jobs:
     if: needs.check-release.outputs.skip != 'true'
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Setup Rust
         uses: ./.github/actions/setup-rust
@@ -340,7 +340,7 @@ jobs:
           }
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: {{ package_name }}-windows-x86_64
           path: rust/target/x86_64-pc-windows-msvc/release/{{ crate_name }}.dll
@@ -354,7 +354,7 @@ jobs:
     if: needs.check-release.outputs.skip != 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Setup Rust
         uses: ./.github/actions/setup-rust
@@ -373,7 +373,7 @@ jobs:
         run: make build-web
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: {{ package_name }}-wasm32
           path: |
@@ -416,10 +416,10 @@ jobs:
       id-token: write       # Sigstore OIDC identity for build provenance
       attestations: write   # store the attestation in the repo
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Download all artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: artifacts
 
