@@ -243,6 +243,19 @@ license:
     - BSD-3-Clause
   default: MIT
 
+# Year of first publication, used in the LICENSE copyright line as
+# "<year>-present". Deliberately a stored answer rather than a rendered "now":
+# the notice must keep naming the year the work was first published, so
+# re-rendering it in a later year must not move it.
+copyright_year:
+  type: str
+  help: "Year of FIRST publication for the LICENSE copyright line (set this — the default is not the current year)"
+  default: "2026"
+  validator: >-
+    {% if not (copyright_year | regex_search('^\d{4}$')) %}
+    Must be a four-digit year. Got: "{{ copyright_year }}"
+    {% endif %}
+
 # -----------------------------------------------------------------------------
 # Topics
 # -----------------------------------------------------------------------------

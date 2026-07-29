@@ -1,7 +1,14 @@
-// Update CHANGELOG.md with AI-generated entry for {{ native_library_name }} update.
+// Update CHANGELOG.md with AI-generated entry for a {{ native_library_name }}
+// dependency update.
 //
 // Uses GitHub Models API (OpenAI-compatible) to analyze release notes
 // and generate appropriate changelog entries.
+//
+// NOTE: this step does NOT touch the `{{ crate_name }}` crate version. That
+// version is bumped as a deliberate release step (`make release-frb`), which
+// also stamps the `{{ crate_name }} vX.Y.Z` Highlights line. An automatic
+// update PR records only the {{ native_library_name }} dependency change, so
+// updates can accumulate on main without publishing a native binary per bump.
 library;
 
 import 'dart:convert';
@@ -203,15 +210,17 @@ Return a JSON object with EXACTLY TWO string fields:
 1. Format: "**{{ native_library_name }} $version** — [brief 3-7 word description]"
 2. Keep it very short and scannable
 3. Examples: "latest upstream native library", "security fixes and improvements", "new API support"
+4. When nothing this package exposes changed, use exactly: "internal/dependency update, no public-API impact"
 
 ## Rules for "changed":
 1. First line exactly: "- Update {{ native_library_name }} native library to $version ($sourceLink)"
 2. Add 2-7 bullet points summarizing key changes from the release notes AND the upstream commit list
-3. Focus on changes relevant to library users (API changes, new features, bug fixes, security fixes)
-4. Prefix every breaking change bullet with "**BREAKING:**"
-5. For internal changes, add "Note: These changes do not affect this library's API"
-6. Use technical but concise language
-7. Judge relevance from the release notes AND the commit list, not from the version numbers
+3. This package binds a SUBSET of {{ native_library_name }}. Upstream changes to parts it neither binds nor exposes NEVER get their own bullet — collapse them into ONE bullet ending "— none of which this library exposes". Presenting them as this package's features is the single most common failure of this step.
+4. Only changes that reach this package's own API get their own bullets
+5. Prefix every breaking change bullet with "**BREAKING:**"
+6. When nothing this package exposes changed — the common case — say so explicitly instead of padding the list, and end with "Note: These changes do not affect this library's public API"
+7. Use technical but concise language
+8. Judge relevance from the release notes AND the commit list, not from the version numbers
 
 Return ONLY valid JSON, no markdown code blocks.
 ''';

@@ -24,7 +24,14 @@ void main() {
         validateUpstreamTag('${_prefix}0.9.0-pre.1'),
         '${_prefix}0.9.0-pre.1',
       );
-      expect(validateUpstreamTag('${_prefix}1.0.0-rc-2'), '${_prefix}1.0.0-rc-2');
+      // Kept wrapped: on one line this renders to 82 columns and `dart format`
+      // rewrites it, so every generated project would ship a file its own
+      // `make format-check` rejects. Nothing on this line is interpolated by
+      // Jinja, so the width is identical for every project.
+      expect(
+        validateUpstreamTag('${_prefix}1.0.0-rc-2'),
+        '${_prefix}1.0.0-rc-2',
+      );
     });
 {%- if upstream_crates %}
 
@@ -41,6 +48,13 @@ void main() {
 
     test('rejects a bare version without the configured prefix', () {
       expect(() => validateUpstreamTag('0.8.1'), throwsFormatException);
+{%- if version_tag_prefix != 'v' %}
+      // `v` is the default prefix, so a tag in that shape is the likeliest
+      // thing to reach a project that overrides it — from a copied command
+      // line, or from a sibling repo. It names a different upstream naming
+      // scheme and must be rejected just like a bare version.
+      expect(() => validateUpstreamTag('v0.8.1'), throwsFormatException);
+{%- endif %}
     });
 {%- endif %}
 
