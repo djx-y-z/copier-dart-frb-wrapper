@@ -116,5 +116,20 @@ void main() {
         throwsFormatException,
       );
     });
+
+    test('names the rejected source in the message', () {
+      // The call sites (API response, --version argument, recorded pin) fail
+      // for different reasons; the message has to say which one to look at.
+      expect(
+        () => validateUpstreamTag('nope', source: '--version argument'),
+        throwsA(
+          isA<FormatException>().having(
+            (e) => e.message,
+            'message',
+            contains('--version argument'),
+          ),
+        ),
+      );
+    });
   });
 }
