@@ -1,16 +1,16 @@
-## [Unreleased]
-
-### Fixed
-
-- **The notice inventory no longer depends on the machine that generated it** (`template/scripts/src/third_party_notices.dart.jinja`) — `cargo tree --target <triple>` filters *normal* dependencies by that triple but resolves *build*-dependencies for the **host**, so `collectLinkedCrates` recorded the build graph of whoever ran the generator. A project whose graph contains a host-gated build dependency therefore produces a different inventory on each platform: in libsignal_dart, `prost-build` → `tempfile` → `rustix` selects `errno` on a macOS host and `linux-raw-sys` on a Linux one — one crate swapped for another with the crate count unchanged, so `make verify-third-party-notices` rejected in CI a file that was correct where it was generated. The problem is not confined to build edges — proc-macro subtrees are host-compiled too, which is how `winapi`, reached through `ansi_term` inside a proc-macro crate, stays invisible everywhere but a Windows host — so no per-target query escapes it. The crate set is now taken from `cargo tree --target all`, the only query cargo offers that applies no platform filtering at all. The per-target sweep is kept, because it is the one thing that fails when a declared release target stops resolving. Over-attribution is the deliberate trade: the extra entries are build tooling and platform-gated crates a given build never links, but a file that lists them on every machine is worth more than a narrower one that changes with the machine — the byte-exact check is only viable if the output is reproducible. **A project that already committed a `THIRD_PARTY_NOTICES.txt` must regenerate it after this update** — the file grows by whatever the generating host was hiding (openmls_dart 237 → 264 crates, libsignal_dart 206 → 241).
-
-- **`--check` reports what actually differs** (`template/scripts/src/third_party_notices.dart.jinja`) — the drift message now names the first differing line and samples the lines unique to each side. This check fails on a machine nobody is sitting at, so the CI log is the entire diagnosis, and "the contents differ" left the reader to bisect a 400 KB generated file by hand — which is exactly what the bug above cost.
+## [4.1.0] - 2026-07-30
 
 ### Added
 
 - **CI verifies the declared MSRV** (`template/.github/workflows/test-reusable.yml.jinja`, `template/.github/actions/setup-rust/action.yml.jinja`) — `rust-version` in `rust/Cargo.toml` was a promise nothing checked, so the first dependency or language feature to raise the real floor would have broken source builds silently. The new `msrv` job reads the version out of the manifest rather than repeating it, so it cannot drift from the claim it checks, then installs that toolchain and runs `make rust-check`, plus protoc where `enable_protoc` is set, since a prost-based build script shells out to it and the job would otherwise fail on tooling rather than on the MSRV. `setup-rust` gained a `toolchain` input (default `stable`).
 
 - **The third-party notice workflow is documented for contributors** (`template/CONTRIBUTING.md.jinja`) — a new *Third-party notices* section records why `--target all` is load-bearing, what the drift message reports, and the exact `cargo-about` invocation that re-validates the inventory against an independent implementation (expected result: the only crate it reports missing is the package's own).
+
+### Fixed
+
+- **The notice inventory no longer depends on the machine that generated it** (`template/scripts/src/third_party_notices.dart.jinja`) — `cargo tree --target <triple>` filters *normal* dependencies by that triple but resolves *build*-dependencies for the **host**, so `collectLinkedCrates` recorded the build graph of whoever ran the generator. A project whose graph contains a host-gated build dependency therefore produces a different inventory on each platform: in libsignal_dart, `prost-build` → `tempfile` → `rustix` selects `errno` on a macOS host and `linux-raw-sys` on a Linux one — one crate swapped for another with the crate count unchanged, so `make verify-third-party-notices` rejected in CI a file that was correct where it was generated. The problem is not confined to build edges — proc-macro subtrees are host-compiled too, which is how `winapi`, reached through `ansi_term` inside a proc-macro crate, stays invisible everywhere but a Windows host — so no per-target query escapes it. The crate set is now taken from `cargo tree --target all`, the only query cargo offers that applies no platform filtering at all. The per-target sweep is kept, because it is the one thing that fails when a declared release target stops resolving. Over-attribution is the deliberate trade: the extra entries are build tooling and platform-gated crates a given build never links, but a file that lists them on every machine is worth more than a narrower one that changes with the machine — the byte-exact check is only viable if the output is reproducible. **A project that already committed a `THIRD_PARTY_NOTICES.txt` must regenerate it after this update** — the file grows by whatever the generating host was hiding (openmls_dart 237 → 264 crates, libsignal_dart 206 → 241).
+
+- **`--check` reports what actually differs** (`template/scripts/src/third_party_notices.dart.jinja`) — the drift message now names the first differing line and samples the lines unique to each side. This check fails on a machine nobody is sitting at, so the CI log is the entire diagnosis, and "the contents differ" left the reader to bisect a 400 KB generated file by hand — which is exactly what the bug above cost.
 
 ## [4.0.0] - 2026-07-30
 
@@ -650,7 +650,8 @@
 - Security policy template
 - Git hooks for pre-commit checks
 
-[Unreleased]: https://github.com/djx-y-z/copier-dart-frb-wrapper/compare/v4.0.0...HEAD
+[Unreleased]: https://github.com/djx-y-z/copier-dart-frb-wrapper/compare/v4.1.0...HEAD
+[4.1.0]: https://github.com/djx-y-z/copier-dart-frb-wrapper/compare/v4.0.0...v4.1.0
 [4.0.0]: https://github.com/djx-y-z/copier-dart-frb-wrapper/compare/v3.0.3...v4.0.0
 [3.0.3]: https://github.com/djx-y-z/copier-dart-frb-wrapper/compare/v3.0.2...v3.0.3
 [3.0.2]: https://github.com/djx-y-z/copier-dart-frb-wrapper/compare/v3.0.1...v3.0.2
