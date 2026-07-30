@@ -1,3 +1,11 @@
+## [Unreleased]
+
+### Fixed
+
+- **The notice inventory no longer depends on the machine that generated it** (`template/scripts/src/third_party_notices.dart.jinja`) — `cargo tree --target <triple>` filters *normal* dependencies by that triple but resolves *build*-dependencies for the **host**, so `collectLinkedCrates` recorded the build graph of whoever ran the generator. A project whose graph contains a host-gated build dependency therefore produces a different inventory on each platform: in libsignal_dart, `prost-build` → `tempfile` → `rustix` selects `errno` on a macOS host and `linux-raw-sys` on a Linux one — one crate swapped for another with the crate count unchanged, so `make verify-third-party-notices` rejected in CI a file that was correct where it was generated. Build edges are now unioned over `--target all`, which covers every platform's build graph at once, and are *added to* rather than substituted for the per-target sweep, so the pass can only widen the inventory and no crate previously listed can disappear. Normal edges stay per-target, so platforms a package does not ship (Redox, UEFI, WASI) never reach the notice. **A project that already committed a `THIRD_PARTY_NOTICES.txt` must regenerate it after this update** — the file grows by whatever build tooling its host was hiding (openmls_dart 237 → 240 crates, libsignal_dart 206 → 220).
+
+- **`--check` reports what actually differs** (`template/scripts/src/third_party_notices.dart.jinja`) — the drift message now names the first differing line and samples the lines unique to each side. This check fails on a machine nobody is sitting at, so the CI log is the entire diagnosis, and "the contents differ" left the reader to bisect a 400 KB generated file by hand — which is exactly what the bug above cost.
+
 ## [4.0.0] - 2026-07-30
 
 ### Changed (BREAKING)
