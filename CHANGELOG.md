@@ -8,7 +8,7 @@
 
 ### Added
 
-- **CI verifies the declared MSRV** (`template/.github/workflows/test-reusable.yml.jinja`, `template/.github/actions/setup-rust/action.yml.jinja`) — `rust-version` in `rust/Cargo.toml` was a promise nothing checked, so the first dependency or language feature to raise the real floor would have broken source builds silently. The new `msrv` job reads the version out of the manifest rather than repeating it, so it cannot drift from the claim it checks, then installs that toolchain and runs `make rust-check`. `setup-rust` gained a `toolchain` input (default `stable`).
+- **CI verifies the declared MSRV** (`template/.github/workflows/test-reusable.yml.jinja`, `template/.github/actions/setup-rust/action.yml.jinja`) — `rust-version` in `rust/Cargo.toml` was a promise nothing checked, so the first dependency or language feature to raise the real floor would have broken source builds silently. The new `msrv` job reads the version out of the manifest rather than repeating it, so it cannot drift from the claim it checks, then installs that toolchain and runs `make rust-check`, plus protoc where `enable_protoc` is set, since a prost-based build script shells out to it and the job would otherwise fail on tooling rather than on the MSRV. `setup-rust` gained a `toolchain` input (default `stable`).
 
 - **The third-party notice workflow is documented for contributors** (`template/CONTRIBUTING.md.jinja`) — a new *Third-party notices* section records why `--target all` is load-bearing, what the drift message reports, and the exact `cargo-about` invocation that re-validates the inventory against an independent implementation (expected result: the only crate it reports missing is the package's own).
 
