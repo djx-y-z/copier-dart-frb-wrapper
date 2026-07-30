@@ -150,6 +150,7 @@ copier copy https://github.com/djx-y-z/copier-dart-frb-wrapper . \
 | `dart_sdk_version` | Dart SDK version constraint | `^3.10.0` | `^3.8.0` |
 | `flutter_sdk_version` | Flutter SDK version constraint | `>=3.38.0` | `>=3.35.0` |
 | `enable_web` | Enable Web/WASM support | `true` | `false` |
+| `enable_protoc` | Enable Protocol Buffers support (install protoc in setup/CI) | `false` | `true` |
 | `enable_fuzzing` | Include a cargo-fuzz harness (rust/fuzz/, Fuzz CI, Makefile targets) | `true` | `false` |
 | `enable_claude` | Include Claude Code files (CLAUDE.md, .claude/skills/) | `true` | `false` |
 
@@ -167,12 +168,15 @@ copier copy https://github.com/djx-y-z/copier-dart-frb-wrapper . \
 | `android_min_sdk` | Android minimum SDK version | `21` | `24` |
 | `android_compile_sdk` | Android compile SDK version | `34` | `35` |
 | `android_ndk_version` | Android NDK version for Rust | `26.3.11579264` | `27.0.12077973` |
+| `android_gradle_version` | Android Gradle plugin version | `8.11.1` | `8.7.0` |
+| `android_java_version` | Java version for Android compilation (11, 17 or 21) | `17` | `21` |
 
 ### Package Metadata
 
 | Variable | Description | Default | Example |
 |----------|-------------|---------|---------|
 | `license` | Package license | `MIT` | `Apache-2.0` |
+| `copyright_year` | Year of **first** publication for the LICENSE copyright line (rendered as `<year>-present`; a stored answer, so it does not move on re-render) | `2026` | `2025` |
 | `topics` | pub.dev topics (comma-separated) | `ffi,native,rust` | `cryptography,ffi,native` |
 
 ## Post-Generation Setup
@@ -192,6 +196,11 @@ make codegen
 
 # Build native libraries for current platform
 make build
+
+# Generate the third-party notice inventory (needs the Cargo.lock from `make build`)
+# CI verifies the committed file against the dependency graph, so the first CI
+# run fails until this is generated and committed.
+make third-party-notices
 
 # Verify everything works
 make analyze          # Dart static analysis (should be clean)

@@ -59,6 +59,7 @@ copier-dart-frb-wrapper/
 | `rust_version` | string | `1.88` | Minimum Rust version (MSRV) |
 | `frb_version` | string | `^2.12.0` | Flutter Rust Bridge version |
 | `enable_web` | boolean | `true` | Enable Web/WASM support |
+| `enable_protoc` | boolean | `false` | Enable Protocol Buffers support (install protoc in setup/CI) |
 | `enable_fuzzing` | boolean | `true` | Include a cargo-fuzz harness (rust/fuzz/, Fuzz CI, Makefile targets) |
 | `enable_claude` | boolean | `true` | Include Claude Code files |
 | `upstream_crates` | string | `` | Upstream Rust crates (comma-separated) |
@@ -72,7 +73,10 @@ copier-dart-frb-wrapper/
 | `android_min_sdk` | string | `21` | Android minimum SDK |
 | `android_compile_sdk` | string | `34` | Android compile SDK |
 | `android_ndk_version` | string | `26.3.11579264` | Android NDK version for Rust |
+| `android_gradle_version` | string | `8.11.1` | Android Gradle plugin version |
+| `android_java_version` | enum | `17` | Java version for Android compilation (11/17/21) |
 | `license` | enum | `MIT` | Package license |
+| `copyright_year` | string | `2026` | Year of first publication for the LICENSE copyright line |
 | `topics` | string | `ffi,native,rust` | pub.dev topics (comma-separated) |
 
 ## Template Syntax
