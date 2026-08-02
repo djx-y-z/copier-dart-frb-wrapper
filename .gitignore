@@ -23,6 +23,12 @@ venv/
 # IDE
 .idea/
 .vscode/
+# ...but template/.vscode/ is payload, not this repo's editor settings: it ships
+# `dart.flutterSdkPath` to generated projects. Without this negation `git add`
+# skips it silently and the template renders without it. The directory itself
+# has to be re-included — git does not descend into an excluded directory, so
+# negating only the file inside would not work.
+!template/.vscode/
 *.iml
 *.swp
 *.swo
