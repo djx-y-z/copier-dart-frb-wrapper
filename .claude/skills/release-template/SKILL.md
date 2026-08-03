@@ -7,24 +7,47 @@ description: Create a new release of the Copier template. Use when user wants to
 
 Guide for releasing new versions of copier-dart-frb-wrapper.
 
-## Quick Release Checklist
+## Releasing
+
+Write the changes under `## [Unreleased]` (rules below), then:
 
 ```bash
-# 1. Ensure all changes are committed
-git status
+make release ARGS="--version 4.3.0"
+```
 
-# 2. Update CHANGELOG.md (move [Unreleased] to new version)
-# 3. Commit changelog
-git add CHANGELOG.md
-git commit -m "chore: prepare release v1.x.x"
+That is the whole release. The script finalizes the CHANGELOG, signs a commit
+and a tag, and pushes both; pushing the tag is what makes
+`.github/workflows/release.yml` publish the GitHub Release, using the CHANGELOG
+section for that version as the notes.
 
-# 4. Create and push tag
-git tag v1.x.x
-git push origin main
-git push origin v1.x.x
+What it does for you, in order:
 
-# 5. Create GitHub Release (optional)
-gh release create v1.x.x --title "v1.x.x" --notes-file <(sed -n '/## \[1.x.x\]/,/## \[/p' CHANGELOG.md | head -n -1)
+1. Refuses unless you are on `main`, the tree is clean, `main` is not behind
+   origin, the tag does not already exist locally or on origin, the version is
+   greater than the last released one, and `## [Unreleased]` is **not empty**.
+2. Renames `## [Unreleased]` → `## [X.Y.Z] - <today>` in place, repoints the
+   `[Unreleased]:` compare link at the new version and inserts the `[X.Y.Z]:`
+   link. The previous version and the repo URL are read out of the existing
+   `[Unreleased]:` link — **do not delete that line**; it is what the next
+   release reads.
+3. Shows the diff, asks for confirmation, then signs the commit and tag.
+
+Two behaviours worth knowing:
+
+- **A mistyped signing passphrase does not abort the release.** `ssh-keygen`
+  reads the passphrase once and gives up rather than re-prompting, so every
+  signing and push step is retried automatically — the prompt just comes back.
+  **Ctrl-C is the way out.**
+- **An interrupted release resumes.** A run that dies between its commit and its
+  tag leaves a state that blocks a plain re-run. Re-run the same command: it
+  recognises that exact state and continues from the tag, without applying the
+  CHANGELOG edit twice.
+
+Useful variants:
+
+```bash
+make release ARGS="--version 4.3.0 --no-push"   # prepare locally, inspect, push by hand
+make test                                        # the release script's own tests
 ```
 
 ## Versioning Rules
@@ -162,22 +185,25 @@ git status
 git diff
 ```
 
-## Creating the Release
+## Doing It by Hand
+
+`make release` is the supported path — these are the steps it performs, for
+when something goes wrong mid-release and you have to finish manually.
 
 ### Step 1: Update CHANGELOG.md
 
-Move `[Unreleased]` items to new version section:
+Rename the `[Unreleased]` heading in place — do **not** leave an empty one
+behind, the next change recreates it:
 
 ```markdown
-## [Unreleased]
-
 ## [1.1.0] - 2025-01-28
 
 ### Added
-- (items from Unreleased)
+- (items that were under Unreleased)
 ```
 
-Update links at bottom:
+Update links at the bottom. Keep the `[Unreleased]:` line: it carries the repo
+URL and the previous version that the next release reads.
 
 ```markdown
 [Unreleased]: https://github.com/djx-y-z/copier-dart-frb-wrapper/compare/v1.1.0...HEAD
@@ -189,24 +215,19 @@ Update links at bottom:
 ```bash
 git add CHANGELOG.md
 git commit -m "chore: prepare release v1.1.0"
-git tag v1.1.0
+git tag -s v1.1.0 -m "Release v1.1.0"
 git push origin main
 git push origin v1.1.0
 ```
 
-### Step 3: Create GitHub Release (Optional)
+The commit subject must be exactly `chore: prepare release vX.Y.Z` — that is
+what `make release` looks for when deciding whether an interrupted release can
+be resumed.
 
-```bash
-# Using GitHub CLI
-gh release create v1.1.0 \
-  --title "v1.1.0" \
-  --notes "See [CHANGELOG.md](CHANGELOG.md) for details."
+### Step 3: GitHub Release
 
-# Or manually:
-# 1. Go to https://github.com/djx-y-z/copier-dart-frb-wrapper/releases
-# 2. Click "Draft a new release"
-# 3. Select tag v1.1.0
-# 4. Add release notes from CHANGELOG.md
+Nothing to do — pushing the tag triggers `.github/workflows/release.yml`, which
+creates the release with the CHANGELOG section for that version as its notes.
 ```
 
 ## How Copier Uses Tags

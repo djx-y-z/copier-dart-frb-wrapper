@@ -164,28 +164,27 @@ This template uses git tags for versioning. Copier automatically detects version
 
 ### Creating a Release
 
-1. **Update CHANGELOG.md:**
-   - Move items from `[Unreleased]` to new version section
-   - Add release date: `## [1.1.0] - 2025-01-28`
-   - Add comparison link at bottom
+1. **Describe the changes** under `## [Unreleased]` in `CHANGELOG.md`.
 
-2. **Commit the changelog:**
+2. **Release:**
    ```bash
-   git add CHANGELOG.md
-   git commit -m "chore: prepare release v1.1.0"
+   make release ARGS="--version 1.1.0"
    ```
 
-3. **Create and push tag:**
-   ```bash
-   git tag v1.1.0
-   git push origin main
-   git push origin v1.1.0
-   ```
+   This checks the preconditions (on `main`, clean tree, not behind origin, tag
+   unused, version greater than the last one, `[Unreleased]` not empty),
+   finalizes the CHANGELOG and its comparison links, then signs a commit and a
+   tag and pushes them. Pushing the tag is what creates the GitHub Release —
+   `.github/workflows/release.yml` uses the CHANGELOG section for that version
+   as its notes.
 
-4. **Create GitHub Release** (optional but recommended):
-   - Go to Releases → Draft a new release
-   - Select the tag
-   - Copy changelog section as release notes
+   The commit and tag are signed, so a passphrase prompt appears. A mistyped
+   passphrase is retried rather than aborting the release, and a run interrupted
+   between its commit and its tag is resumed by re-running the same command.
+
+   Use `ARGS="--version 1.1.0 --no-push"` to stop before pushing.
+
+The release script has its own tests: `make test`.
 
 ### Version Guidelines
 
