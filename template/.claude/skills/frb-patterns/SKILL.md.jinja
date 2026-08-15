@@ -333,7 +333,7 @@ Use `Vec<u8>` for complex types instead of trying to pass upstream types directl
 ### `block_on` panics
 
 `futures::executor::block_on()` requires a non-async context. This works because FRB runs Rust functions on separate threads. Do NOT call storage callbacks from an async Rust context without `block_on`.
-
+{% if enable_web %}
 ## Web/WASM Considerations
 
 FRB handles web platform differences automatically, but keep in mind:
@@ -355,3 +355,4 @@ rustflags = ['--cfg', 'getrandom_backend="wasm_js"']
 ```bash
 make build-web
 ```
+{%- endif %}

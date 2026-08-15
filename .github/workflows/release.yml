@@ -82,10 +82,10 @@ jobs:
 
           # Create new project
           mkdir my_project && cd my_project
-          copier copy --vcs-ref=v${{ steps.version.outputs.version }} https://github.com/${{ github.repository }} .
+          copier copy --trust --vcs-ref=v${{ steps.version.outputs.version }} https://github.com/${{ github.repository }} .
 
           # Update existing project (must have .copier-answers.yml)
-          copier update --vcs-ref=v${{ steps.version.outputs.version }}
+          copier update --trust --defaults --skip-tasks --vcs-ref=v${{ steps.version.outputs.version }}
           ```
 
           ### Using Claude Skills

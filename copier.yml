@@ -12,7 +12,9 @@
 #   pip install copier jinja2-strcase
 # =============================================================================
 
-_min_copier_version: "9.0.0"
+# 9.3.1, not 9.0.0: the generated project's update path passes `--skip-tasks`,
+# which copier added in 9.2.0 and only wired through the CLI correctly in 9.3.1.
+_min_copier_version: "9.3.1"
 _subdirectory: template
 _templates_suffix: .jinja
 

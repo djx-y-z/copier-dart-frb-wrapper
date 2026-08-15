@@ -105,10 +105,10 @@ make build ARGS="--target aarch64-apple-ios"
 
 # Build for Android (requires cargo-ndk + Android NDK)
 make build-android ARGS="--target aarch64-linux-android"
-
+{% if enable_web %}
 # Build WASM for web (requires wasm-pack)
 make build-web
-
+{% endif %}
 # Run tests (uses local build)
 make test
 ```

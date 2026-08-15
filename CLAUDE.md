@@ -153,6 +153,9 @@ These files have conditional blocks based on `enable_web` or `upstream_crates`:
 - `hook/build.dart.jinja` - WASM download support
 - `README.md.jinja` - web platform mention
 - `CLAUDE.md.jinja` - web commands
+- `.pubignore.jinja` - downloaded WASM output
+- `scripts/README.md.jinja` - `make build-web` in the local-build list
+- `.claude/skills/frb-patterns/SKILL.md.jinja` - Web/WASM Considerations section
 
 ## Versioning
 
