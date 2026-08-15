@@ -236,9 +236,9 @@ Configure secrets and variables in your repository settings (Settings → Secret
 | `APP_ID` | GitHub App ID | Update checker workflow |
 | `COVERAGE_GIST_ID` | Gist ID for coverage badge JSON | Coverage badge |
 
-#### GitHub App Setup (for update checker)
+#### GitHub App Setup (for the update checkers)
 
-The GitHub App is used by the `check-*-updates.yml` workflow to create Pull Requests with signed commits when a new version of the native library is detected. This ensures commits are verified and associated with a bot account rather than a personal account.
+Both `check-*-updates.yml` (new upstream release) and `check-template-updates.yml` (new template release) use the App to open Pull Requests with signed commits. This ensures commits are verified and associated with a bot account rather than a personal account.
 
 1. Go to **Settings → Developer settings → GitHub Apps → New GitHub App**
 2. Fill in:
@@ -248,6 +248,7 @@ The GitHub App is used by the `check-*-updates.yml` workflow to create Pull Requ
 3. Set **Repository permissions**:
    - **Contents**: Read & Write
    - **Pull requests**: Read & Write
+   - **Workflows**: Read & Write — see below
    - **Metadata**: Read-only
 4. Click **Create GitHub App**
 5. Copy the **App ID** (shown at the top) → add as `APP_ID` **variable**
@@ -255,9 +256,36 @@ The GitHub App is used by the `check-*-updates.yml` workflow to create Pull Requ
 7. A `.pem` file will download → copy its contents as `APP_PRIVATE_KEY` secret
 8. Go to **Install App** (left sidebar) → Install on your repository
 
-#### AI Changelog Setup (optional)
+> **Why `Workflows`.** A template update is an ordinary commit over whatever the
+> template owns, and it owns `.github/workflows/**`. GitHub refuses to let an App
+> write a workflow file without this permission, and the refusal is easy to
+> misread: `create-pull-request` commits through the Git Data API, so it arrives
+> as `Resource not accessible by integration` on `POST /git/trees` — *after*
+> every blob has been created, which is itself a `Contents: write` operation and
+> therefore proves that permission is fine. It also stays invisible until the
+> first update that happens to touch a workflow; every PR the bot opened before
+> that one goes through untouched.
+>
+> Two traps when adding it to an App that already exists. **`Actions` is not
+> `Workflows`**: `Actions` governs workflow *runs*, `Workflows` governs the
+> workflow *files*, and only the second unblocks this. And a permission added to
+> an App does not reach the tokens it issues until every installation **accepts**
+> the change — **Settings → Applications → Installed GitHub Apps → your app →
+> Review request**. Until that is accepted the App's own settings page shows the
+> new permission while the workflow keeps failing exactly as before.
 
-The `check-*-updates.yml` workflow uses [GitHub Models API](https://github.com/marketplace/models) to generate CHANGELOG entries when a new upstream version is detected. Without this token, the workflow still works but skips changelog generation.
+#### AI Changelog Setup (currently non-functional)
+
+> **GitHub Models is being retired.** The API this step calls answers `GitHub
+> Models is temporarily unavailable as part of a scheduled retirement brownout`,
+> so it fails on every run and no token you create will change that. Both update
+> workflows degrade the way they are built to: the pull request is still opened,
+> the checks table records the CHANGELOG entry as **not written** with the error,
+> and the PR is labelled `changelog-needed` so a human writes it. Skip this
+> section until a replacement provider is wired into
+> `scripts/src/update_changelog.dart` — the steps below are kept for when one is.
+
+The `check-*-updates.yml` and `check-template-updates.yml` workflows use the [GitHub Models API](https://github.com/marketplace/models) to generate CHANGELOG entries when a new version is detected. Without this token, the workflows still work but skip changelog generation.
 
 1. Go to **Settings → Developer settings → Personal access tokens → Fine-grained tokens**
 2. Click **Generate new token**
@@ -307,7 +335,26 @@ See [dart.dev/tools/pub/automated-publishing](https://dart.dev/tools/pub/automat
    - Scopes: check only `gist`
    - Click **Generate token** → copy and add as `GIST_TOKEN` secret
 
-### 4. Repository Topics
+### 4. Repository Protection
+
+Rulesets and environments live on GitHub, not in the repository, so nothing in
+the generated tree applies them for you. Once the repository exists and the first
+push has landed, run — as a repo **admin**, with [`gh`](https://cli.github.com)
+authenticated:
+
+```bash
+make setup-repo-protections
+```
+
+It creates every ruleset committed under `.github/rulesets/` (protected `main`,
+required commit signing, protected release tags, no branch deletion) and the
+`native-build` environment with you as its required reviewer. Until it runs, the
+native binary that every consumer downloads at build time can be published by
+anyone with `write` and no review, and the release tags that trigger that build
+are unprotected. See `.github/rulesets/README.md` for what each ruleset does,
+how to adjust bypass actors, and how to re-apply after editing one.
+
+### 5. Repository Topics
 
 Add these topics to your GitHub repository for discoverability:
 - `dart`
@@ -317,7 +364,7 @@ Add these topics to your GitHub repository for discoverability:
 - `flutter-rust-bridge`
 - Your native library name
 
-### 5. Update SECURITY.md
+### 6. Update SECURITY.md
 
 Review and update `SECURITY.md` with your security policy and contact information.
 
