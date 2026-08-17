@@ -444,8 +444,14 @@ analyze:
 format:
 	$(FVM) dart format . $(ARGS)
 
+# `--output=none` because this one is the *check*. Without it `dart format`
+# writes the reformatted files and *then* exits non-zero, so the gate edits the
+# tree it was asked to inspect: the pre-commit hook aborts the commit and leaves
+# behind a modification the committer never made, and the template-update
+# workflow silently repairs its own pull request while reporting a failure the
+# merged branch cannot reproduce. `make format` is the one that writes.
 format-check:
-	$(FVM) dart format --set-exit-if-changed . $(ARGS)
+	$(FVM) dart format --output=none --set-exit-if-changed . $(ARGS)
 
 doc:
 	@touch .skip_{{ package_name }}_hook

@@ -71,7 +71,9 @@ The CI automatically checks for new {{ native_library_name }} releases daily and
 - Updating `pubspec.yaml` with new version
 - Updating `Cargo.lock` dependencies
 - Regenerating FRB bindings
-- Generating AI-powered CHANGELOG entry (if `AI_MODELS_TOKEN` is configured)
+- Generating AI-powered CHANGELOG entry — **currently fails on every run**, see
+  [Setting up AI Changelog](#setting-up-ai-changelog) below. The PR is still
+  opened and labelled `changelog-needed`; write the entry by hand.
 
 ### Manual Updates
 
@@ -89,10 +91,9 @@ make rust-update
 # 4. Regenerate bindings
 make codegen
 
-# 5. Update CHANGELOG (requires AI_MODELS_TOKEN)
+# 5. Update CHANGELOG by hand — the command below currently fails on every run
+#    whatever AI_MODELS_TOKEN holds (GitHub Models is being retired)
 AI_MODELS_TOKEN=xxx make update-changelog ARGS="--version v1.0.0"
-
-# Or update CHANGELOG.md manually
 
 # 6. Test and commit
 make test

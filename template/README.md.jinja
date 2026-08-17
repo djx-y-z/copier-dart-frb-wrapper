@@ -170,7 +170,8 @@ make check-targets
 # Update Cargo.lock dependencies
 make rust-update
 
-# Generate AI-powered changelog entry (requires AI_MODELS_TOKEN)
+# Generate AI-powered changelog entry
+# (currently fails on every run — GitHub Models is being retired; see CONTRIBUTING)
 make update-changelog ARGS="--version v1.0.0"
 ```
 
