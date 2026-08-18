@@ -65,11 +65,36 @@ fi
 # Exit code 127 is reported separately: it means a command inside the make
 # recipe was not found, which is a broken environment rather than a failing
 # check, and the fix hint would be actively misleading.
+#
+# The check runs in a subshell with git's own environment stripped, and that is
+# load-bearing rather than hygiene. Git exports GIT_DIR to every hook, and every
+# child process inherits it. In an ordinary checkout it is the relative string
+# `.git`, which is harmless by accident — a tool that changes directory
+# re-resolves it against wherever it now stands. A *worktree* has no such luck:
+# its `.git` is a file rather than a directory, so the exported path is
+# necessarily absolute, and it then follows every child process everywhere.
+#
+# Anything downstream that asks git about *itself* is then told about this
+# repository instead. `flutter` does exactly that to determine its own version:
+# run from a worktree's hook it read the committing repository's HEAD, found no
+# Flutter tag on it, and wrote `"frameworkVersion": "0.0.0-unknown"` into the
+# pinned SDK's `bin/cache/flutter.version.json`. That file is a cache, so the
+# damage outlived the hook — every later `flutter` and `dart` invocation, inside
+# a hook or not, failed version solving with "The current Flutter SDK version is
+# 0.0.0-unknown" until it was deleted by hand.
+#
+# Stripped here rather than at the top of the file, because this hook's own git
+# calls must keep the full environment. `staged_touches_rust` reads the index,
+# and `git commit -a` runs the hook against a *temporary* index named by
+# GIT_INDEX_FILE — unset that globally and the gate reads the real index
+# instead, skipping the Rust check on exactly the commits that staged Rust
+# through `-a`. A subshell keeps the two apart: git's environment for the
+# hook's questions, a clean one for the tools.
 run_step() {
     local num="$1" label="$2" hint="$3"
     shift 3
     echo -e "\n${YELLOW}[$num/3] $label...${NC}"
-    if "$@"; then
+    if ( unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE; "$@" ); then
         echo -e "${GREEN}$label passed.${NC}"
     else
         local status=$?
