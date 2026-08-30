@@ -108,8 +108,11 @@ rust_version:
 # -----------------------------------------------------------------------------
 frb_version:
   type: str
-  help: "Flutter Rust Bridge version constraint"
-  default: "^2.12.0"
+  help: >-
+    Flutter Rust Bridge version — exact, no range operator. The generated
+    bindings record the version that produced them and the runtime asserts
+    equality, so a range breaks the day the next FRB is published.
+  default: "2.12.0"
 
 # -----------------------------------------------------------------------------
 # Upstream Rust crates (optional)
