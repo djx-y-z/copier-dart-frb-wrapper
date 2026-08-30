@@ -386,9 +386,28 @@ _message_after_copy: |
       - Add topics in GitHub repository settings
       - Review and update SECURITY.md with your contact information
 
-  14. Configure GitHub Actions:
-      - Create GitHub App for signed commits (APP_ID, APP_PRIVATE_KEY)
-      - Setup coverage badge (GIST_TOKEN, COVERAGE_GIST_ID)
+  14. Configure GitHub Actions. Nothing below has a default: a workflow that
+      writes into your repository, or spends money, is named by you or does
+      not run. Every one of these degrades to a notice rather than a red run.
+      - GitHub App for signed commits, and for the pull requests and issues
+        the automation opens:
+          variable APP_CLIENT_ID   (the App's Client ID, not its numeric ID)
+          secret   APP_PRIVATE_KEY
+      - Coverage badge:
+          secret   GIST_TOKEN
+          variable COVERAGE_GIST_ID
+      - AI changelog entries on update pull requests: currently non-functional.
+        GitHub Models was retired, so this step fails whatever token it is
+        given; the update workflows degrade as designed, opening the pull
+        request and labelling it `changelog-needed`. Nothing to configure
+        until a replacement provider is wired in.
+      - Repair and review agents (repair-build.yml, ai-review.yml):
+          variable AGENT_ENGINE            'claude-code' or 'opencode'
+          variable AGENT_CLAUDECODE_MODEL  or AGENT_OPENCODE_MODEL, matching
+          secret   ANTHROPIC_API_KEY       or the provider key OpenCode reads
+          variable REVIEW_ALLOWED_BOTS     your App's slug, if bot-authored
+                   pull requests should be reviewed on the claude-code engine
+        Both agents are off entirely while AGENT_ENGINE is unset.
       See CONTRIBUTING.md for detailed instructions
 
   15. Harden releases (recommended for native/crypto libraries):
