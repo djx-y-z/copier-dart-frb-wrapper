@@ -1,3 +1,17 @@
+## [Unreleased]
+
+### Changed
+
+- **The `pub` and `cargo` groups take minor and patch only** (`template/.github/dependabot.yml.jinja`) — 4.6.0 added both ecosystems with `patterns: ["*"]`, which groups every update into one pull request. The first `cargo` run in a generated project produced six updates of which four were majors: `rand` 0.9 → 0.10 failed to compile against seven files (`unresolved imports rand::TryRngCore, rand::rngs::OsRng`), and `hkdf`, `sha2` and `aes-gcm-siv` are a coordinated RustCrypto major that has to be judged against what the upstream crate itself resolves to. Grouped with them were `log` 0.4.33 → 0.4.34 and `uuid` 1.24 → 1.26, which were fine and unmergeable anyway — one breaking crate takes the whole pull request down, and the only action left is to close it.
+
+  Majors now arrive one pull request each, where a migration can be reviewed as a migration, and a group stays mergeable. The `ignore` entries are unchanged and were confirmed working on that first run: `flutter_rust_bridge` and the pinned upstream crates were not touched. `github-actions` keeps its ungrouped behaviour — those bumps are SHA-pinned with a version comment and a major there is usually an input change worth seeing in the same list.
+
+### Fixed
+
+- **One bullet still told a generated project the changelog step always fails** (`template/CONTRIBUTING.md.jinja`) — 4.6.0 replaced the retired provider and rewrote the three places CONTRIBUTING described it: the update recipe, the "Setting up AI Changelog" section and the make-target line. It missed a fourth, in the bulleted list of what the update automation does, which still read "**currently fails on every run**" eight lines above the section that now explains how to configure the model making it work. The same sweep-for-the-claim-not-the-line that 4.6.0's own entry describes would have caught it; it was found instead by adopting 4.6.0 into a generated project, where the stale bullet came back as the template's side of a merge conflict.
+
+  Only a project generated fresh from 4.6.0 is affected. Both existing projects had long since replaced that whole region with their own one-line summary, so the adoption resolved that hunk in their favour and neither carries the text — checked in both rather than assumed.
+
 ## [4.6.0] - 2026-08-31
 
 ### Added
