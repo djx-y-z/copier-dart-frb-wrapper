@@ -71,9 +71,10 @@ The CI automatically checks for new {{ native_library_name }} releases daily and
 - Updating `pubspec.yaml` with new version
 - Updating `Cargo.lock` dependencies
 - Regenerating FRB bindings
-- Generating AI-powered CHANGELOG entry — **currently fails on every run**, see
-  [Setting up AI Changelog](#setting-up-ai-changelog) below. The PR is still
-  opened and labelled `changelog-needed`; write the entry by hand.
+- Generating an AI-written CHANGELOG entry, when `AI_MODELS` names a model that
+  has a key — see [Setting up AI Changelog](#setting-up-ai-changelog) below.
+  Without one the PR is still opened and labelled `changelog-needed`, and the
+  entry is written by hand.
 
 ### Manual Updates
 
