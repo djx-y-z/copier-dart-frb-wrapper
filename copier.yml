@@ -25,6 +25,16 @@ _jinja_extensions:
 # =============================================================================
 # Exclude files conditionally
 # =============================================================================
+# Written once, then owned by the generated project. `changelog-scope.md` is
+# the prompt's statement of what this wrapper binds and exposes — the one thing
+# about a project that no answer here can hold, and the thing every automatic
+# CHANGELOG entry is classified against. Regenerating it on update would either
+# throw away the project's own version or raise a conflict on every release.
+# Absent from a destination it is recreated, so an existing project picks it up
+# on its next update.
+_skip_if_exists:
+  - ".github/agent-prompts/changelog-scope.md"
+
 _exclude:
   - copier.yml
   - copier.yaml
@@ -113,6 +123,14 @@ frb_version:
     bindings record the version that produced them and the runtime asserts
     equality, so a range breaks the day the next FRB is published.
   default: "2.12.0"
+  validator: >-
+    {% if not (frb_version | regex_search('^\\^?\\d+\\.\\d+\\.\\d+$')) %}
+    Must be X.Y.Z (a leading ^ is stripped). Got: "{{ frb_version }}".
+    Three components are required — the pubspec upper bound is computed as the
+    next patch, so "2.12" cannot be rendered at all. A pre-release such as
+    2.13.0-beta.1 is rejected for a subtler reason: it has no well-defined next
+    patch, and the bound that would be computed admits the final release too.
+    {% endif %}
 
 # -----------------------------------------------------------------------------
 # Upstream Rust crates (optional)
@@ -399,11 +417,15 @@ _message_after_copy: |
       - Coverage badge:
           secret   GIST_TOKEN
           variable COVERAGE_GIST_ID
-      - AI changelog entries on update pull requests: currently non-functional.
-        GitHub Models was retired, so this step fails whatever token it is
-        given; the update workflows degrade as designed, opening the pull
-        request and labelling it `changelog-needed`. Nothing to configure
-        until a replacement provider is wired in.
+      - AI changelog entries on update pull requests:
+          variable AI_MODELS        ordered `provider/model` list, first one
+                   with a key wins. No default: unset means no model is called
+                   and the entry is left for a human.
+          secret   ANTHROPIC_API_KEY / GEMINI_API_KEY / OPENROUTER_API_KEY,
+                   one per provider named in AI_MODELS
+          variable AI_EFFORT        low|medium|high|xhigh|max (default medium)
+        Then edit .github/agent-prompts/changelog-scope.md to say what this
+        package binds and exposes — every entry is classified against it.
       - Repair and review agents (repair-build.yml, ai-review.yml):
           variable AGENT_ENGINE            'claude-code' or 'opencode'
           variable AGENT_CLAUDECODE_MODEL  or AGENT_OPENCODE_MODEL, matching
@@ -430,3 +452,8 @@ _message_after_update: |
     make setup
     make codegen
     make build
+
+  If this update created .github/agent-prompts/changelog-scope.md, edit it. It
+  states what this package binds and exposes, every automatic CHANGELOG entry is
+  classified against it, and no later update will overwrite it — so the generic
+  version it arrives with is the version it keeps until you replace it.

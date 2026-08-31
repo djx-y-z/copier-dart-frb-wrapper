@@ -27,7 +27,11 @@ dependencies:
   flutter_rust_bridge: ">={{ _frb }} <{{ _frb_parts[0] }}.{{ _frb_parts[1] }}.{{ _frb_parts[2] | int + 1 }}"
   # SHA256 verification for native library downloads
   crypto: ^3.0.7
-  # Build hooks for automatic native library download
+  # Build hooks for automatic native library download. Left on the caret
+  # deliberately: these define the protocol hook/build.dart implements, and the
+  # SDK is the other half of it — capping them below what the pinned Flutter
+  # expects breaks the hook at a consumer's build, which is worse than the drift.
+  # Majors (hooks 2.x, code_assets 2.x) are a deliberate migration, not a bump.
   hooks: ^1.0.0
   code_assets: ^1.0.0
   # Data-carrying enums/structs in the FRB API are generated as freezed
@@ -35,11 +39,21 @@ dependencies:
   freezed_annotation: ^3.0.0
 
 dev_dependencies:
-  lints: ^6.0.0
+  # Capped to one minor line, not because 6.1 is bad but because
+  # `make analyze ARGS="--fatal-infos"` makes every newly-added info-level lint
+  # a build failure, pubspec.lock is not committed, and CI re-resolves on every
+  # run — so a minor published upstream reddens main with nobody having changed
+  # a line. Within the range, patches still arrive. The bump then comes as a
+  # Dependabot pull request the matrix actually evaluates, which is the review
+  # this deserves; widen the upper bound there once it is green.
+  lints: ">=6.0.0 <6.1.0"
   test: ^1.24.0
   coverage: ^1.15.0
-  # Required by flutter_rust_bridge_codegen
-  ffigen: ^20.0.0
+  # Required by flutter_rust_bridge_codegen. Feeds codegen rather than the
+  # runtime, so a change here shows up as a diff in the committed bindings and
+  # not as a failing assert — the update workflow's `bindings=changed` tripwire
+  # is what surfaces it.
+  ffigen: ^20.1.1
   # Required by the FRB-generated freezed sealed classes. Upper bound:
   # 3.2.6-dev prereleases fail flutter_rust_bridge_codegen's dependency
   # version check.

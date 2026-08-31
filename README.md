@@ -226,14 +226,18 @@ Configure secrets and variables in your repository settings (Settings → Secret
 | Secret | Description | Required For |
 |--------|-------------|--------------|
 | `APP_PRIVATE_KEY` | GitHub App private key (PEM format) | Update checker workflow |
-| `AI_MODELS_TOKEN` | Fine-grained PAT with Models: Read permission | AI changelog generation |
+| `ANTHROPIC_API_KEY` | Anthropic API key | AI changelog generation (`anthropic/…` entries) |
+| `GEMINI_API_KEY` | Google AI Studio API key | AI changelog generation (`google/…` entries) |
+| `OPENROUTER_API_KEY` | OpenRouter API key | AI changelog generation (`openrouter/…` entries) |
 | `GIST_TOKEN` | Personal Access Token with `gist` scope | Coverage badge |
 
 #### Variables (Settings → Secrets and variables → Actions → Variables)
 
 | Variable | Description | Required For |
 |----------|-------------|--------------|
-| `APP_ID` | GitHub App ID | Update checker workflow |
+| `APP_CLIENT_ID` | GitHub App **Client ID** (not the numeric App ID) | Update checker workflow |
+| `AI_MODELS` | Ordered `provider/model` list, e.g. `anthropic/claude-opus-5,google/gemini-3.5-flash-lite`. No default — unset means no model is called | AI changelog generation |
+| `AI_EFFORT` | `low` \| `medium` (default) \| `high` \| `xhigh` \| `max` | AI changelog generation |
 | `COVERAGE_GIST_ID` | Gist ID for coverage badge JSON | Coverage badge |
 
 #### GitHub App Setup (for the update checkers)
@@ -274,26 +278,43 @@ Both `check-*-updates.yml` (new upstream release) and `check-template-updates.ym
 > Review request**. Until that is accepted the App's own settings page shows the
 > new permission while the workflow keeps failing exactly as before.
 
-#### AI Changelog Setup (currently non-functional)
+#### AI Changelog Setup
 
-> **GitHub Models is being retired.** The API this step calls answers `GitHub
-> Models is temporarily unavailable as part of a scheduled retirement brownout`,
-> so it fails on every run and no token you create will change that. Both update
-> workflows degrade the way they are built to: the pull request is still opened,
-> the checks table records the CHANGELOG entry as **not written** with the error,
-> and the PR is labelled `changelog-needed` so a human writes it. Skip this
-> section until a replacement provider is wired into
-> `scripts/src/update_changelog.dart` — the steps below are kept for when one is.
+The `check-*-updates.yml` and `check-template-updates.yml` workflows write the
+CHANGELOG entry with an AI model. **Which** model is configuration rather than
+code: `AI_MODELS` holds an ordered, comma-separated list of `provider/model`
+entries and the first one that has a key and answers wins, so changing provider
+is a repository-variable edit instead of a template release rolled out across
+every generated project. (That cost is why it works this way: the previous
+provider, GitHub Models, was retired on 2026-07-30 and had been hard-coded.)
 
-The `check-*-updates.yml` and `check-template-updates.yml` workflows use the [GitHub Models API](https://github.com/marketplace/models) to generate CHANGELOG entries when a new version is detected. Without this token, the workflows still work but skip changelog generation.
+**There is no default list.** With `AI_MODELS` unset nothing is called: the
+workflows still open the pull request, record the entry as **not written**, and
+label it `changelog-needed` for a human. That is also how a project says "no AI
+here" without a provider sitting there waiting for a key to appear.
 
-1. Go to **Settings → Developer settings → Personal access tokens → Fine-grained tokens**
-2. Click **Generate new token**
-3. Fill in:
-   - **Token name**: `ai-models`
-   - **Expiration**: choose a duration (or no expiration)
-4. Under **Permissions** → **Account permissions** → set **Models** to **Read**
-5. Click **Generate token** → copy and add as `AI_MODELS_TOKEN` secret
+1. Get an API key from the provider you want —
+   [Anthropic](https://console.anthropic.com/settings/keys),
+   [Google AI Studio](https://aistudio.google.com/apikey) or
+   [OpenRouter](https://openrouter.ai/keys).
+2. Add it as a repository **secret**: `ANTHROPIC_API_KEY`, `GEMINI_API_KEY` or
+   `OPENROUTER_API_KEY`.
+3. Add the repository **variable** `AI_MODELS`, naming the models to try in
+   order — e.g. `anthropic/claude-opus-5,google/gemini-3.5-flash-lite`. An entry
+   whose key is unset is skipped; a malformed one is warned about loudly,
+   because it is a typo rather than a choice.
+4. Optionally add the variable `AI_EFFORT` (`low` | `medium` | `high` | `xhigh`
+   | `max`, default `medium`).
+
+`openrouter` is an aggregator, so its model half carries its own slash:
+`openrouter/anthropic/claude-opus-5`. The pull-request body names the model that
+actually wrote the entry, so a first entry that has quietly started failing is
+visible immediately rather than months later as a drift in house style.
+
+Each generated project also gets `.github/agent-prompts/changelog-scope.md` —
+its own statement of what it binds and exposes, which every entry is classified
+against. It is written once and never overwritten by a template update, so edit
+it to match the project.
 
 #### pub.dev Publishing Setup
 
