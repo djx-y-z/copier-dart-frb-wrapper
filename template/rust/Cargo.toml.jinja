@@ -29,10 +29,26 @@ log = "0.4"
 {%- if enable_web %}
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-# Diamond dependency: some upstream crates use getrandom 0.2, some use 0.3
-# Both need to be configured for WASM to work correctly
+# getrandom refuses to compile for wasm32-unknown-unknown until its browser
+# backend is selected by name, and three majors coexist in a modern Rust crypto
+# graph. Cargo unions features per package version and per target, so declaring
+# each here is what turns the backend on for every crate that reaches it on the
+# Web, and changes nothing for the native builds.
+#
+# 0.4 is the one that is easy to miss. The RustCrypto stack reaches it through
+# aead 0.6 -> crypto-common, which declares it with NO target cfg, so it is
+# compiled for wasm32 as well — and a `--cfg getrandom_backend="wasm_js"` in
+# .cargo/config.toml does NOT cover it: 0.4 does not recognise that value and
+# selects its backend from the feature alone.
+#
+# Getting it wrong is loud rather than silently weak: getrandom `compile_error!`s
+# when it has no backend for this target, so `make build-web` fails closed.
+# If one of these is genuinely unreachable, `cargo tree --target
+# wasm32-unknown-unknown -i getrandom@<version>` says so — the declaration is
+# then the only thing holding it in the graph and can be dropped.
 getrandom_02 = { package = "getrandom", version = "0.2", features = ["js"] }
 getrandom = { version = "0.3", features = ["wasm_js"] }
+getrandom_04 = { package = "getrandom", version = "0.4", features = ["wasm_js"] }
 wasm-bindgen = "0.2"
 wasm-bindgen-futures = "0.4"
 js-sys = "0.3"

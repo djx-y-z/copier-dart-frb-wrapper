@@ -18,6 +18,26 @@
 
 ### Fixed
 
+- **`make release-frb` stamped its highlight into the middle of a sentence** (`template/scripts/src/release_frb.dart.jinja`) — `stampFrbHighlight` inserted the `**<crate> vX.Y.Z**` line at `lastBullet + 1`, one line after the *first* line of the last Highlights bullet. A bullet that wraps continues on indented lines that do not start with `- `, so the stamp landed inside it and split the sentence in half:
+
+      - **libsignal v0.101.2** — upstream bump. One change does land in a surface this
+      - **libsignal_frb v6.1.2** — Rust FFI bindings
+        package exposes, and it is an internal API migration with no behavioural
+        effect; sealed sender's cipher state is now cleared on drop
+
+  Every release in every generated project so far happened to have a single-line highlight there, which is why it took a real release to surface — and it surfaced in the one section a release is about to freeze, where `finalizeChangelog` renames `[Unreleased]` in place and would have made it permanent.
+
+  Everything between the last bullet and the end of the Highlights block belongs to that bullet, so the insert point is now the block's last non-blank line. Two tests cover it: a fresh insert below a wrapped highlight, and the in-place version replacement a re-run performs. Both were checked against the old insert and fail there.
+
+- **The wasm32 block could not build a modern RustCrypto graph** (`template/rust/Cargo.toml.jinja`) — it declared getrandom 0.2 and 0.3, and a generated project that reaches getrandom **0.4** fails its Web build outright:
+
+      error: The wasm32/64-unknown-unknown are not supported by default;
+             you may need to enable the "wasm_js" crate feature
+
+  The RustCrypto stack arrives there without announcing itself: `aes-gcm-siv` 0.12 carries `getrandom` in its default features and forwards it as `aead/getrandom`; `aead` 0.6 forwards that to `crypto-common/getrandom`; and `crypto-common` declares getrandom 0.4 with **no** target cfg, so it is compiled for wasm32 too. A `--cfg getrandom_backend="wasm_js"` in `.cargo/config.toml` does not cover it either — 0.4 does not recognise that value and selects its backend from the feature alone.
+
+  All three generated projects reached this independently before the template did, which is the sign it belonged here: two had already added the declaration by hand, and the third discovered it the expensive way, when a native release build failed on the Web job alone after twelve native targets had passed. 0.4 is now declared alongside the other two, and the comment says how to tell when one of the three has become unreachable — `cargo tree --target wasm32-unknown-unknown -i getrandom@<version>` naming only the crate itself means the declaration is the only thing holding it in the graph.
+
 - **One bullet still told a generated project the changelog step always fails** (`template/CONTRIBUTING.md.jinja`) — 4.6.0 replaced the retired provider and rewrote the three places CONTRIBUTING described it: the update recipe, the "Setting up AI Changelog" section and the make-target line. It missed a fourth, in the bulleted list of what the update automation does, which still read "**currently fails on every run**" eight lines above the section that now explains how to configure the model making it work. The same sweep-for-the-claim-not-the-line that 4.6.0's own entry describes would have caught it; it was found instead by adopting 4.6.0 into a generated project, where the stale bullet came back as the template's side of a merge conflict.
 
   Only a project generated fresh from 4.6.0 is affected. Both existing projects had long since replaced that whole region with their own one-line summary, so the adoption resolved that hunk in their favour and neither carries the text — checked in both rather than assumed.
