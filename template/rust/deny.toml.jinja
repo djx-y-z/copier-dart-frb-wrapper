@@ -18,6 +18,19 @@ version = 2
 # Add advisory IDs here (each with a justification comment) only to consciously
 # accept a risk that cannot yet be remediated, e.g. an unmaintained build-time
 # dependency pulled transitively by an upstream crate with no available upgrade.
+#
+# Two things about this list that are easy to get wrong:
+#
+#   - An entry that stops matching is reported as `advisory-not-detected`. That
+#     warning is the signal to DELETE the entry, not to keep it in case the
+#     crate comes back: an ignore nobody can trigger is indistinguishable from
+#     one that is quietly covering a second advisory it was never reviewed for.
+#     Re-check the whole list on every upstream bump — empty it, run
+#     `make rust-deny`, and re-add only what fires again, with a fresh reason.
+#
+#   - This list and `.cargo/audit.toml` are not interchangeable. cargo-deny
+#     also reports *unmaintained* advisories, which `cargo audit` does not fail
+#     on, so an entry here is often one `make rust-audit` never needed.
 ignore = []
 
 [licenses]
@@ -26,24 +39,22 @@ confidence-threshold = 0.9
 # The project's own license plus the permissive licenses commonly found in a
 # Rust dependency tree. Extend this list if `cargo deny check licenses` reports
 # a license it did not encounter (that is expected the first time you build).
+#
+# Rendered as one de-duplicated list rather than "own license, then the common
+# set": three of the four licenses this template offers (MIT, Apache-2.0,
+# BSD-3-Clause) are already in that set, so the straightforward form emits them
+# twice and cargo-deny reports the duplicate against this file. AGPL-3.0 is the
+# one that genuinely adds entries, which is why it carries the two SPDX
+# spellings the tree actually uses.
+{%- set _allowed_licenses = [license]
+    + (["AGPL-3.0-only", "AGPL-3.0-or-later"] if license == "AGPL-3.0" else [])
+    + ["MIT", "Apache-2.0", "Apache-2.0 WITH LLVM-exception", "BSD-2-Clause",
+       "BSD-3-Clause", "ISC", "Zlib", "MPL-2.0", "Unicode-3.0",
+       "Unicode-DFS-2016", "CC0-1.0", "0BSD"] %}
 allow = [
-    "{{ license }}",
-{%- if license == "AGPL-3.0" %}
-    "AGPL-3.0-only",
-    "AGPL-3.0-or-later",
-{%- endif %}
-    "MIT",
-    "Apache-2.0",
-    "Apache-2.0 WITH LLVM-exception",
-    "BSD-2-Clause",
-    "BSD-3-Clause",
-    "ISC",
-    "Zlib",
-    "MPL-2.0",
-    "Unicode-3.0",
-    "Unicode-DFS-2016",
-    "CC0-1.0",
-    "0BSD",
+{%- for _license in _allowed_licenses | unique %}
+    "{{ _license }}",
+{%- endfor %}
 ]
 exceptions = []
 

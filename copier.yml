@@ -164,6 +164,14 @@ enable_web:
   default: true
 
 # -----------------------------------------------------------------------------
+# freezed (only needed by some FRB API shapes)
+# -----------------------------------------------------------------------------
+enable_freezed:
+  type: bool
+  help: "Add freezed to the generated project. flutter_rust_bridge needs it only when the Rust API has data-carrying enums or structs it renders as sealed classes; a project whose API has none carries three dependencies and a build_runner step for nothing. Turn it off and turn it back on the first time codegen emits a `@freezed` class."
+  default: true
+
+# -----------------------------------------------------------------------------
 # Protocol Buffers support (optional)
 # -----------------------------------------------------------------------------
 enable_protoc:

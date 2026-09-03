@@ -1,3 +1,26 @@
+{#-
+  The upstream tag with its configured prefix removed, so the badge below reads
+  `v1.2.3` whatever `version_tag_prefix` is. This must stay in step with
+  `_normalizeVersion` in scripts/src/check_updates.dart, which rewrites this
+  same badge on every automatic upstream bump: strip `version_tag_prefix`, and
+  fall back to a bare `v`/`V` when the tag does not carry it. Sliced rather than
+  `replace`d — `replace` would cut the prefix string wherever it occurs, not
+  only at the front.
+
+  The closing `endif` is right-trimmed (`-%}`) because its newline would
+  otherwise be the first byte of the rendered README.
+-#}
+{%- if upstream_version %}
+{%- if version_tag_prefix and upstream_version.startswith(version_tag_prefix) %}
+{%- set _upstream_semver = upstream_version[version_tag_prefix | length:] %}
+{%- elif upstream_version[:1] in ['v', 'V'] %}
+{%- set _upstream_semver = upstream_version[1:] %}
+{%- else %}
+{%- set _upstream_semver = upstream_version %}
+{%- endif %}
+{%- else %}
+{%- set _upstream_semver = '1.0.0' %}
+{%- endif -%}
 # {{ package_name }}
 
 [![pub package](https://img.shields.io/pub/v/{{ package_name }}.svg)](https://pub.dev/packages/{{ package_name }})
@@ -6,7 +29,7 @@
 [![License](https://img.shields.io/badge/license-{{ license | replace('-', '--') }}-blue.svg)](LICENSE)
 [![Dart](https://img.shields.io/badge/dart-%3E%3D3.10.0-brightgreen.svg)](https://dart.dev)
 [![Flutter](https://img.shields.io/badge/flutter-%3E%3D3.38.0-blue.svg)](https://flutter.dev)
-[![{{ native_library_name }}](https://img.shields.io/badge/{{ native_library_name }}-v1.0.0-orange.svg)](https://github.com/{{ native_repo }})
+[![{{ native_library_name }}](https://img.shields.io/badge/{{ native_library_name }}-v{{ _upstream_semver }}-orange.svg)](https://github.com/{{ native_repo }})
 
 {{ description }}
 
@@ -77,17 +100,22 @@ The Rust core of {{ native_library_name }} ships as a `.wasm` module in both mod
 
 ### Prerequisites
 
+**Using the published package requires none of this.** The build hook downloads
+a precompiled native library from GitHub Releases during `flutter build`, so a
+consumer needs no Rust toolchain, no FVM and no `make`. The list below is for
+contributors and for building from source.
+
 - [Flutter](https://flutter.dev/docs/get-started/install) ({{ flutter_sdk_version }})
-- [Rust](https://rustup.rs/) ({{ rust_version }}+)
+- [Rust](https://rustup.rs/) ({{ rust_version }}+) — must match `rust-version` in `rust/Cargo.toml`
 - [FVM](https://fvm.app/) (recommended for version management)
-- Make (for build commands)
+- Make (for build commands; see the Windows note in CONTRIBUTING.md)
 
 ### Setup
 
 ```bash
 # Clone the repository
 git clone https://github.com/{{ github_repo }}.git
-cd {{ package_name }}
+cd {{ github_repo.split('/') | last }}
 
 # Setup development environment (installs FVM, Flutter, Rust tools)
 make setup
@@ -152,7 +180,7 @@ make build-android
 {% if enable_web %}
 # Build for Web (WASM)
 make build-web
-{% endif %}
+{%- endif %}
 ```
 
 ## CI / Version Management
@@ -207,8 +235,6 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 ## Security
 
 See [SECURITY.md](SECURITY.md) for security policy and reporting vulnerabilities.
-
-**Note:** Update SECURITY.md with your contact information for vulnerability reports.
 
 ## License
 
