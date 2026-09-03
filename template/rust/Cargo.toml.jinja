@@ -53,6 +53,15 @@ wasm-bindgen = "0.2"
 wasm-bindgen-futures = "0.4"
 js-sys = "0.3"
 web-sys = { version = "0.3", features = ["console", "Window", "Performance"] }
+
+[target.'cfg(target_arch = "wasm32")'.dev-dependencies]
+# The browser harness `make test-web` drives. Target-gated so a native
+# `cargo test` does not build a browser harness it can never run.
+#
+# ⚠ This is NOT visible to the third-party notices gate, and does not need to
+# be: `make third-party-notices` runs `cargo tree --edges normal,build`, which
+# excludes EVERY dev-dependency on every target, gated or not.
+wasm-bindgen-test = "0.3"
 {%- endif %}
 
 [profile.release]

@@ -139,7 +139,7 @@ jobs:
       - name: Build for Linux ${{"{{"}} matrix.arch {{"}}"}}
         run: |
           cd rust
-          cargo build --release --target ${{"{{"}} matrix.rust_target {{"}}"}}
+          cargo build --release --locked --target ${{"{{"}} matrix.rust_target {{"}}"}}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7
@@ -184,7 +184,7 @@ jobs:
           MACOSX_DEPLOYMENT_TARGET: '{{ macos_min_version }}'
         run: |
           cd rust
-          cargo build --release --target ${{"{{"}} matrix.rust_target {{"}}"}}
+          cargo build --release --locked --target ${{"{{"}} matrix.rust_target {{"}}"}}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7
@@ -235,7 +235,7 @@ jobs:
           IPHONEOS_DEPLOYMENT_TARGET: '{{ ios_min_version }}'
         run: |
           cd rust
-          cargo build --release --target ${{"{{"}} matrix.rust_target {{"}}"}}
+          cargo build --release --locked --target ${{"{{"}} matrix.rust_target {{"}}"}}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7
@@ -275,8 +275,11 @@ jobs:
           sdkmanager --install "ndk;{{ android_ndk_version }}"
           echo "ANDROID_NDK_HOME=$ANDROID_SDK_ROOT/ndk/{{ android_ndk_version }}" >> $GITHUB_ENV
 
+      # `--locked` so the tool is built from its own committed lockfile.
+      # ⚠ The cargo-ndk VERSION is still unpinned, and this job produces the
+      # shipped Android .so files.
       - name: Setup cargo-ndk
-        run: cargo install cargo-ndk
+        run: cargo install cargo-ndk --locked
 {%- if enable_protoc %}
 
       - name: Setup Protoc
@@ -289,7 +292,7 @@ jobs:
           # (matches the package's documented minSdk; cargo-ndk would
           # otherwise use its own default).
           cd rust
-          cargo ndk -t ${{"{{"}} matrix.rust_target {{"}}"}} --platform {{ android_min_sdk }} build --release
+          cargo ndk -t ${{"{{"}} matrix.rust_target {{"}}"}} --platform {{ android_min_sdk }} build --release --locked
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7
@@ -330,7 +333,7 @@ jobs:
             Rename-Item $gitLink $gitLinkBak
           }
           try {
-            cargo build --release `
+            cargo build --release --locked `
               --manifest-path rust/Cargo.toml `
               --target x86_64-pc-windows-msvc
           } finally {

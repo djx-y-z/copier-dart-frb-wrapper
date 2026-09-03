@@ -59,9 +59,21 @@ make coverage
 1. Ensure all tests pass: `make test`
 2. Ensure code is formatted: `make format-check`
 3. Ensure no analyzer issues: `make analyze`
-4. Update documentation if needed
-5. Update CHANGELOG.md with your changes
-6. Submit a pull request
+4. Ensure both documentation gates pass: `make doc` and `make rust-doc`
+   (these BLOCK in CI — `dartdoc_options.yaml` promotes an unresolved
+   reference to an error, and `make rust-doc` runs under `-D warnings`)
+{%- if enable_web %}
+5. If you touched a `cfg(target_arch = "wasm32")` branch, run `make test-web` —
+   it is the only check that executes web code, and it needs a chromedriver:
+   `make test-web CHROMEDRIVER=/path/to/chromedriver`
+6. Update documentation if needed
+7. Update CHANGELOG.md with your changes
+8. Submit a pull request
+{%- else %}
+5. Update documentation if needed
+6. Update CHANGELOG.md with your changes
+7. Submit a pull request
+{%- endif %}
 
 ## Updating Native Library
 

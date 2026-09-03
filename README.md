@@ -413,7 +413,10 @@ make version            # Show current crate version
 
 # Rust Quality
 make rust-check         # Check Rust code compiles
+make rust-doc           # Rustdoc GATE: intra-doc links, -D warnings
+make rust-geiger        # Unsafe-expression census (diagnostic, not gated)
 make rust-audit         # Audit Rust dependencies for vulnerabilities
+make test-web           # Browser tests in headless Chrome - if enable_web=true
 
 # Dart Quality
 make test               # Run tests
@@ -421,7 +424,7 @@ make coverage           # Run tests with coverage report
 make analyze            # Run static analysis
 make format             # Format Dart code
 make format-check       # Check Dart code formatting
-make doc                # Generate API documentation
+make doc                # Generate API docs (GATE: fails on unresolved refs)
 
 # Utilities
 make get                # Get dependencies
