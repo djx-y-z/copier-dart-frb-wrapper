@@ -57,7 +57,7 @@ copier-dart-frb-wrapper/
 | `crate_name` | string | `<package_name>_frb` | Rust crate name |
 | `rust_edition` | string | `2024` | Rust edition (2021 or 2024) |
 | `rust_version` | string | `1.88` | Minimum Rust version (MSRV) |
-| `frb_version` | string | `^2.12.0` | Flutter Rust Bridge version |
+| `frb_version` | string | `2.13.0` | Flutter Rust Bridge version |
 | `enable_web` | boolean | `true` | Enable Web/WASM support |
 | `enable_protoc` | boolean | `false` | Enable Protocol Buffers support (install protoc in setup/CI) |
 | `enable_fuzzing` | boolean | `true` | Include a cargo-fuzz harness (rust/fuzz/, Fuzz CI, Makefile targets) |

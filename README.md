@@ -86,7 +86,7 @@ copier copy https://github.com/djx-y-z/copier-dart-frb-wrapper . \
   --data crate_name=my_signal_lib_frb \
   --data rust_edition=2024 \
   --data rust_version=1.88 \
-  --data frb_version="^2.12.0" \
+  --data frb_version="2.13.0" \
   --data upstream_crates=libsignal \
   --data upstream_version=v0.86.0 \
   --data enable_web=true \
@@ -132,7 +132,7 @@ copier copy https://github.com/djx-y-z/copier-dart-frb-wrapper . \
 | `crate_name` | Rust crate name for FRB wrapper | `<package_name>_frb` | `my_signal_lib_frb` |
 | `rust_edition` | Rust edition (2021 or 2024) | `2024` | `2021` |
 | `rust_version` | Minimum Rust version (MSRV) | `1.88` | `1.75` |
-| `frb_version` | Flutter Rust Bridge version | `^2.12.0` | `^2.10.0` |
+| `frb_version` | Flutter Rust Bridge version | `2.13.0` | `2.10.0` |
 
 ### Upstream Crate (optional)
 
