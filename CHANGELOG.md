@@ -1,3 +1,23 @@
+## [Unreleased]
+
+### Added
+
+- **A test that enforces the release profile's panic strategy** (`template/rust/src/utils.rs.jinja`, `template/rust/Cargo.toml.jinja`) — the manifest has said since v4.5.0 that the *absence* of a `panic` key in `[profile.release]` is load-bearing: `panic = "abort"` skips unwinding, so `Drop` never runs and every zeroize-on-Drop in the crate is silently bypassed, leaving key material in memory after any panic. Nothing enforced that. A generated project could add the key, pass every gate, and ship it.
+
+  The test reads the manifest rather than observing a running panic, because it has to: Cargo forces `panic = "unwind"` for the `test` and `bench` profiles and rejects the key on per-package overrides, so the setting that actually ships is unobservable from inside a test binary. It goes red on `panic = "abort"` in either TOML string form and on the section being renamed away.
+
+  It also rejects any non-comment line naming both `panic` and `abort`, whatever shape it is written in. An exact `[profile.release]` header match is a thing TOML gives several ways around — `[profile]` with `release.panic`, a bare dotted `profile.release.panic`, an inline `release = { panic = "abort" }` — and enumerating the shapes is the part that would rot. Verified in a render, both directions: the rendered test passes against the rendered manifest, and it goes red both on the key inside `[profile.release]` and on `release.panic = "abort"` planted where the header match cannot see it.
+
+  It lives in `utils.rs` because that is where the scaffold already keeps its tests, and it is `#[cfg(all(test, not(target_arch = "wasm32")))]` — the statement is native-only, since `wasm32-unknown-unknown` aborts on panic by target default and no profile key changes that.
+
+### Fixed
+
+- **`CLAUDE.md` documented a version key that does not exist** (`template/CLAUDE.md.jinja`) — the "Native Library Version" section told every generated project that the native library version is set in `pubspec.yaml` under a `native_version` key. There is no such key in `pubspec.yaml.jinja`, and the template's own build hook (`template/hook/build.dart.jinja`, `_readVersion`) parses the crate version out of `rust/Cargo.toml`. The section now distinguishes the two versions that actually exist — the upstream git tag and the native crate version — and says which one decides the binary a consumer downloads, and why that makes stage 1 a prerequisite for stage 2.
+
+- **The publishing checklist ended in a tag the template's own ruleset rejects** (`template/CLAUDE.md.jinja`) — it closed with `git tag -a vX.Y.Z` and a push, which is an *unsigned* tag. `template/.github/rulesets/protect-release-tags.json.jinja` puts `required_signatures` on `~ALL` tags, and `rulesets/README.md.jinja` says in as many words that `make release-frb` / `make release` already sign tags. The checklist also predated the two-stage release flow that the same file documents three hundred lines above it, so it walked a maintainer through a hand-rolled release that the scripts exist to replace. It now points at that flow, lists the gates to have green before stage 1 (including the two blocking documentation gates and, on web projects, `make test-web`), and records that `make release-frb` only *warns* when local main is ahead of origin — so commits CI has never seen would reach origin at the same moment the tag starts the native build.
+
+- **`analysis_options.yaml` was outside the test workflow's path filters** (`template/.github/workflows/test.yml.jinja`) — it is in both of them now, on `push` and on `pull_request`. That file decides what `make analyze` reports, so a commit changing only the lint configuration was precisely the one that did not re-run the gate it changes. Same reasoning that already carries `dartdoc_options.yaml` one entry above it.
+
 ## [4.7.0] - 2026-09-04
 
 ### Added

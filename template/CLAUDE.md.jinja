@@ -288,12 +288,16 @@ See `.github/rulesets/README.md`.
 
 ## Native Library Version
 
-The {{ native_library_name }} version is specified in `pubspec.yaml`:
+Two different versions live here, and neither of them is in `pubspec.yaml`:
 
-```yaml
-{{ package_name }}:
-  native_version: "1.0.0"  # Current version
-```
+- **The upstream {{ native_library_name }} version** is the git tag in
+  `rust/Cargo.toml` — the `tag = "..."` on every upstream dependency line. That
+  is what `make check-new-{{ package_name }}-version` reads and updates.
+- **The native crate version** is `[package] version` in `rust/Cargo.toml`.
+  `hook/build.dart` parses it out of that file and downloads
+  `{{ crate_name }}-<version>` from GitHub Releases, so the copy of
+  `rust/Cargo.toml` inside the published archive is what decides which binary a
+  consumer gets. It is also why stage 1 has to finish before stage 2.
 
 To check/update the version:
 ```bash
@@ -482,23 +486,36 @@ Rules:
 
 ## Publishing Checklist
 
+Releasing itself is **"Release Flow (two stages)"** above — `make release-frb`,
+then `make release`. Do not bump versions, tag or push by hand: each script
+requires a clean tree, bumps the right file, finalizes the CHANGELOG, and
+creates a **signed** tag (`git tag -s`), which the `Protect release tags`
+ruleset requires. An unsigned `git tag -a` is rejected.
+
+What to have green before starting stage 1:
+
 ```bash
-# 1. Run quality checks
-make analyze
-make test
+make analyze ARGS="--fatal-infos"
 make format-check
-
-# 2. Update version in pubspec.yaml
-# 3. Update CHANGELOG.md
-
-# 4. Dry run
-make publish-dry-run
-
-# 5. Create annotated tag and push (CI will publish)
-git tag -a vX.Y.Z -m "Release vX.Y.Z"
-git push origin main
-git push origin vX.Y.Z
+make test
+make rust-test
+make rust-clippy
+make doc                        # blocking: unresolved doc references
+make rust-doc                   # blocking: intra-doc links
+{%- if enable_web %}
+make test-web                   # the crate's wasm32 tests, in a real browser
+{%- endif %}
+make rust-audit
+make rust-deny
+make verify-frb-pins
+make verify-third-party-notices
+make publish-dry-run            # exits 65 on ANY warning, a dirty tree included
 ```
+
+Push first and let CI go green. `make release-frb` only *warns* when local main
+is ahead of origin and then pushes those commits together with the release tag
+— so commits CI has never seen would reach origin at the same moment the tag
+starts the native build.
 
 ## Claude Skills
 
