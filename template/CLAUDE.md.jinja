@@ -501,7 +501,7 @@ make test
 make rust-test
 make rust-clippy
 make doc                        # blocking: unresolved doc references
-make rust-doc                   # blocking: intra-doc links
+make rust-doc                   # blocking: intra-doc links{% if enable_web %}, host + wasm32{% endif %}
 {%- if enable_web %}
 make test-web                   # the crate's wasm32 tests, in a real browser
 {%- endif %}

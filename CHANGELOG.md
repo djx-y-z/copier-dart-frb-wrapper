@@ -18,6 +18,12 @@
 
 - **`analysis_options.yaml` was outside the test workflow's path filters** (`template/.github/workflows/test.yml.jinja`) — it is in both of them now, on `push` and on `pull_request`. That file decides what `make analyze` reports, so a commit changing only the lint configuration was precisely the one that did not re-run the gate it changes. Same reasoning that already carries `dartdoc_options.yaml` one entry above it.
 
+### Changed
+
+- **The pinned action SHAs move up** (`template/.github/actions/setup-rust/action.yml.jinja`, `template/.github/workflows/fuzz.yml.jinja`, `template/.github/workflows/ai-review.yml`, `template/.github/workflows/repair-build.yml.jinja`) — `Swatinem/rust-cache` v2.9.1 → v2.9.2 and `anthropics/claude-code-action` v1.0.186 → v1.0.213, taken from the versions a generated project's Dependabot had already proposed and its full CI had already gone green on.
+
+  These pins are **hand-maintained on purpose, and nothing here will remind you.** Dependabot's `github-actions` ecosystem scans `.github/workflows/` and `.github/actions/*/action.yml` at the repository root; everything above lives under `template/`, and most of it is `.jinja`, which it does not parse either. So the template's pins go stale silently while every generated project's Dependabot discovers the same bump independently — and each of those bumps is then a local change that the next `copier update` has to three-way merge. Moving the template in the same breath as merging one of those pull requests is what keeps the two sides converged.
+
 ## [4.7.0] - 2026-09-04
 
 ### Added
