@@ -64,6 +64,20 @@ web-sys = { version = "0.3", features = ["console", "Window", "Performance"] }
 wasm-bindgen-test = "0.3"
 {%- endif %}
 
+# ⚠ The absence of a `panic` key here is load-bearing. Adding
+# `panic = "abort"` would trade a small binary saving for skipping unwinding
+# altogether, and unwinding is what runs `Drop` — so every zeroize-on-Drop in
+# this crate would silently stop happening on the one path where it matters
+# most, a failure in the middle of an operation holding key material. Nothing
+# would fail; the wipe would just not occur. The same applies to
+# `-Cpanic=abort` in RUSTFLAGS, which bypasses this file entirely.
+#
+# It is a native-target statement only: `wasm32-unknown-unknown` aborts on
+# panic by default (`rustc --print cfg --target wasm32-unknown-unknown` says
+# `panic="abort"`), and no profile key changes that — a panic traps the module,
+# destructors do not run, and anything held in linear memory stays there until
+# the page is reloaded. Say so in SECURITY.md rather than assuming the profile
+# covers it.
 [profile.release]
 lto = true
 opt-level = "z"

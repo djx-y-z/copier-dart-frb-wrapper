@@ -4,10 +4,56 @@ Thank you for your interest in contributing to {{ package_name }}!
 
 ## Getting Started
 
-1. Fork the repository
-2. Clone your fork: `git clone https://github.com/{{ github_repo }}.git`
-3. Setup development environment: `make setup`
-4. Create a feature branch: `git checkout -b feature/your-feature`
+### Prerequisites
+
+- [Rust toolchain](https://rustup.rs/) ({{ rust_version }}+) — `rust-version` in
+  `rust/Cargo.toml` is the authority; this is the same number
+- [Dart SDK]( https://dart.dev/get-dart ) ({{ dart_sdk_version }}) or Flutter
+  ({{ flutter_sdk_version }}) — `make setup` installs the pinned Flutter through fvm
+- `make` (see **Windows Users** below)
+- Git
+
+Nothing here is needed to *use* the published package: consumers get a
+precompiled native library through the build hook.
+
+### Fork and Clone
+
+1. Fork the repository on GitHub
+2. Clone **your fork**, not this repository:
+   ```bash
+   git clone https://github.com/YOUR_USERNAME/{{ github_repo.split('/') | last }}.git
+   cd {{ github_repo.split('/') | last }}
+   ```
+3. Add the upstream remote, so you can keep the fork current:
+   ```bash
+   git remote add upstream https://github.com/{{ github_repo }}.git
+   ```
+
+### Quick Setup
+
+```bash
+make setup
+```
+
+It checks that a Rust toolchain is present (and tells you where to get one if
+not), installs fvm and the Flutter version pinned in `.fvmrc`,{% if enable_protoc %} installs
+protoc,{% endif %} then installs the Rust tooling the gates need — `cargo-audit`,
+`cargo-deny` and `flutter_rust_bridge_codegen` at the exact version this
+project pins.
+
+Optional, per platform: `make setup-android` (cargo-ndk){% if enable_web %},
+`make setup-web` (wasm-pack){% endif %}{% if enable_fuzzing %}, `make setup-fuzz`
+(nightly + cargo-fuzz){% endif %}.
+
+### Verify Setup
+
+```bash
+# Every command this project has, with a one-line description each
+make help
+
+# The end-to-end check: this builds the native library if it is missing
+make test
+```
 
 ### Editor Setup (FVM)
 
@@ -27,6 +73,64 @@ On Windows, enable [Developer Mode][windows-dev-mode] before the first
 `dart.flutterSdkPath` points at.
 
 [windows-dev-mode]: https://learn.microsoft.com/en-us/windows/apps/get-started/enable-your-device-for-development
+
+### Windows Users
+
+Every task in this project runs through `make`, which Windows does not ship.
+Install it first:
+
+- Chocolatey: `choco install make`
+- Scoop: `scoop install make`
+- Or work in Git Bash or WSL, where it is already present
+
+Then `make setup` as above.
+
+### Project Structure
+
+```
+{{ github_repo.split('/') | last }}/
+├── lib/
+│   ├── {{ package_name }}.dart{{ ' ' * (21 - (package_name | length) - 5) }}# public API — the only file consumers import
+│   └── src/rust/            # FRB-generated bindings (do NOT hand-edit)
+├── rust/                    # The native crate
+│   ├── Cargo.toml           # Dependencies, features, profiles, MSRV
+│   └── src/api/             # What FRB exposes; everything else is internal
+├── test/                    # Dart tests
+├── hook/build.dart          # Build hook: downloads or finds the native library
+├── scripts/                 # Automation — invoke through the Makefile
+├── example/                 # Example app
+└── Makefile                 # The single entry point for every task
+```
+
+Two of those are load-bearing conventions rather than layout: `lib/src/rust/`
+is generated output that `make codegen` rewrites, so an edit there survives
+exactly until the next run; and `scripts/` is called through `make`, which is
+where the arguments and the environment each script expects are set.
+
+## Making Changes
+
+### Create a Branch
+
+```bash
+git checkout -b feature/your-feature-name
+# or
+git checkout -b fix/the-thing-that-is-broken
+```
+
+### Types of Contributions
+
+- **Bug fixes** — with a test that fails before the fix
+- **Documentation** — including the comments that explain why a constraint exists
+- **Tests** — especially for a path only one platform reaches
+- **Features** — please open an issue first
+- **Performance** — with a measurement, not an argument
+
+### Before You Start
+
+For anything larger than a fix, open an issue and wait for a reply. This
+project pins versions, caps constraints and gates releases on grounds that are
+written down but not always obvious from the diff — a change can be correct and
+still be wrong here, and finding that out in review is expensive for you.
 
 ## Development Workflow
 
@@ -54,6 +158,26 @@ make analyze
 make coverage
 ```
 
+### Regenerating FRB Bindings
+
+Everything under `lib/src/rust/` is generated from `rust/src/api/`. Change the
+Rust API and the Dart side does not follow until you run:
+
+```bash
+make codegen
+make test
+```
+
+Regenerate when you add, remove or change anything in `rust/src/api/` — a
+signature, a type, an enum variant, or a doc comment, which flutter_rust_bridge
+copies into the Dart output verbatim. Commit the result: the bindings are
+checked in, CI compares them against what codegen produces, and the runtime
+asserts that its own flutter_rust_bridge version equals the one recorded in
+them.
+
+Never hand-edit a generated file to fix a build. The next `make codegen`
+reverts it, which turns a red build into a red build nobody can reproduce.
+
 ## Pull Request Process
 
 1. Ensure all tests pass: `make test`
@@ -74,6 +198,16 @@ make coverage
 6. Update CHANGELOG.md with your changes
 7. Submit a pull request
 {%- endif %}
+
+### Checklist
+
+- [ ] Tests pass locally (`make test`)
+- [ ] Formatting and analysis are clean (`make format-check`, `make analyze`)
+- [ ] Both documentation gates pass (`make doc`, `make rust-doc`)
+- [ ] Generated bindings are regenerated and committed, not hand-edited
+- [ ] CHANGELOG.md has an entry for anything a consumer can observe
+- [ ] New constraints, pins and caps carry a comment saying why
+- [ ] Commit messages describe the change and the reason for it
 
 ## Updating Native Library
 
@@ -365,6 +499,28 @@ build, no network. Moving the version means moving `frb_version` in
 installed generator and the committed bindings match; a pull request that edits
 one of the five is wrong by construction, which is why Dependabot is told to
 leave `flutter_rust_bridge` alone.
+
+## Makefile Commands Reference
+
+`make help` prints every target with a one-line description and is the list
+that cannot go stale. These are the ones a change usually needs:
+
+| Command | What it does |
+|---------|--------------|
+| `make setup` | Install the toolchain: fvm + pinned Flutter, Rust tools, FRB codegen |
+| `make codegen` | Regenerate the bindings under `lib/src/rust/` |
+| `make build` | Build the native library for this machine |
+| `make test` | Run the Dart test suite |
+| `make analyze` / `make format-check` | The two gates CI runs on every platform |
+| `make doc` / `make rust-doc` | The documentation gates — both BLOCK in CI |
+| `make rust-check` / `make rust-clippy` / `make rust-test` | The Rust gates |
+| `make rust-audit` / `make rust-deny` | Advisories, licences, sources |
+| `make third-party-notices` | Regenerate the notice inventory CI verifies |
+| `make clean` | Remove build artifacts, including `rust/target` |
+
+Run tasks through `make` rather than calling the underlying tool: the targets
+set the arguments and environment the scripts expect, and several of them exist
+precisely because the bare command does the wrong thing.
 
 ## Code Style
 

@@ -236,22 +236,6 @@ jobs:
         shell: bash
 {%- endif %}
 
-      # The notice inventory is generated from the resolved dependency graph, so
-      # any dependency change invalidates it. Verified once, on Linux x86_64:
-      # the generator unions every release target regardless of the host.
-      - name: Verify third-party notices
-        if: matrix.name == 'Linux x86_64'
-        run: make verify-third-party-notices
-        shell: bash
-
-      # Cheap enough to run unconditionally, but kept on one leg for the same
-      # reason as the notices above: it reads committed files, so all four legs
-      # would read the same bytes and report the same answer.
-      - name: Verify FRB pins agree
-        if: matrix.name == 'Linux x86_64'
-        run: make verify-frb-pins
-        shell: bash
-
       - name: Analyze
         run: make analyze ARGS="--fatal-infos"
         shell: bash
@@ -325,6 +309,34 @@ jobs:
           COVERAGE=$(lcov --summary coverage/lcov.info 2>&1 | grep 'lines' | sed 's/.*: //' | sed 's/%.*//')
           echo "percentage=$COVERAGE" >> $GITHUB_OUTPUT
           echo "Coverage: $COVERAGE%"
+        shell: bash
+
+      # ── Bookkeeping gates, last on purpose ──────────────────────────────
+      #
+      # These check committed files against the dependency graph rather than
+      # exercising any code, and they are placed after everything that does
+      # because a step failing takes every step after it with it. Run early,
+      # a stale notice inventory means the Dart suite never runs at all on
+      # this leg — and the inventory goes stale on EVERY dependency bump,
+      # which is exactly the pull request whose code most needs testing. The
+      # bookkeeping failure is real and still fails the job; it just no
+      # longer decides whether the tests get to report.
+      #
+      # Both stay on one leg: they read committed files, so all four legs
+      # would read the same bytes and reach the same answer. Linux x86_64 is
+      # the one that also runs coverage, so nothing else is waiting on it.
+
+      # The notice inventory is generated from the resolved dependency graph, so
+      # any dependency change invalidates it. Verified once, on Linux x86_64:
+      # the generator unions every release target regardless of the host.
+      - name: Verify third-party notices
+        if: matrix.name == 'Linux x86_64'
+        run: make verify-third-party-notices
+        shell: bash
+
+      - name: Verify FRB pins agree
+        if: matrix.name == 'Linux x86_64'
+        run: make verify-frb-pins
         shell: bash
 
   # ============================================
