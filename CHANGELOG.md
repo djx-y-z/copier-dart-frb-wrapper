@@ -1,3 +1,11 @@
+## [Unreleased]
+
+### Changed
+
+- **`make run-example-web` clears the stale `dart_build` stamp, and the README names the hole it works around** (`template/Makefile.jinja`, `template/README.md.jinja`, `template/CLAUDE.md.jinja`) — the target wiped `example/web/pkg/` and trusted the build hook to refresh it, which the hook cannot do when Flutter never invokes it. A debug `flutter run` keys its build directory on the engine revision, the entrypoint, the build mode and the output path — the target platform is not in that key — so a debug run for macOS and a debug run for Chrome share one directory and therefore one `dart_build` stamp, and whichever ran first satisfies the other: Flutter finds every dependency the *other* platform recorded unchanged, logs `Skipping target: dart_build`, and the hook is skipped outright. The wipe then turns a stale `web/pkg/` into a missing one, so the example fails to start with a 404 for `pkg/<crate_name>.js` — which reads as a Rust or flutter_rust_bridge bug rather than as a build-system skip, and is the more expensive of the two failures to chase. Deleting `example/build/*/dart_build.stamp` is correct by construction: a stamp that does not exist cannot be stale, and an unmatched glob under `rm -f` is a no-op, so a fresh tree is unaffected.
+
+  Consumers of a generated package hit the same thing in their own app, and no hook can defend against it — the skip happens above `hooks_runner`, where nothing the hook declares as a dependency is ever read. So `README.md.jinja` gains a *Known Limitations* subsection naming the escapes (one `flutter build web`, which is keyed to its own build directory and always reaches the hook; deleting `build/*/dart_build.stamp`; or `flutter clean`), and `CLAUDE.md.jinja` carries the same warning beside the target it belongs to. Measured both ways in the project this comes from, on Flutter 3.38.4: with the stale stamp in place the hook does not run and `web/pkg/` stays missing; with it deleted the hook runs and the dev server serves the glue and the `.wasm` in full.
+
 ## [4.8.0] - 2026-09-06
 
 ### Added
