@@ -73,7 +73,7 @@ void main() {
 |             | Android | iOS   | macOS  | Linux      | Windows |{% if enable_web %} Web |{% endif %}
 |-------------|---------|-------|--------|------------|---------|{% if enable_web %}-----|{% endif %}
 | **Support** | SDK {{ android_min_sdk }}+ | {{ ios_min_version }}+ | {{ macos_min_version }}+ | arm64, x64 | x64     |{% if enable_web %} WASM |{% endif %}
-| **Arch**    | arm64, armv7, x64 | arm64 | arm64, x64 | arm64, x64 | x64 |{% if enable_web %} wasm32 |{% endif %}
+| **Arch**    | arm64, armv7, x64 | arm64, x64 (sim) | arm64, x64 | arm64, x64 | x64 |{% if enable_web %} wasm32 |{% endif %}
 {% if enable_web %}
 ## Known Limitations
 
