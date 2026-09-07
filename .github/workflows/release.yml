@@ -29,7 +29,7 @@ jobs:
         id: version
         run: |
           VERSION="${GITHUB_REF#refs/tags/v}"
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "Releasing version: $VERSION"
 
       - name: Extract changelog for this version
@@ -57,7 +57,7 @@ jobs:
             echo "changelog<<EOF"
             echo "$CHANGELOG"
             echo "EOF"
-          } >> $GITHUB_OUTPUT
+          } >> "$GITHUB_OUTPUT"
 
       - name: Create GitHub Release
         env:
