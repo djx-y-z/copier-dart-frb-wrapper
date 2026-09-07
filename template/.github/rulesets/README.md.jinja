@@ -100,6 +100,9 @@ test / Test (Windows x86_64)
 test / Security Audit (Rust)
 test / Dependency Policy (cargo-deny)
 test / MSRV (rust-version from Cargo.toml)
+test / Cross-compile (Android arm64-v8a)
+test / Cross-compile (Android armeabi-v7a)
+test / Cross-compile (Android x86_64)
 ```
 
 Two cautions. The `test / ` prefix is part of the context and comes from the
@@ -110,6 +113,13 @@ be flaky: a required check that fails by itself teaches people to merge past
 required checks, which costs more than the leg is worth. `test / Update Coverage
 Badge` belongs in neither list — it is skipped on pull requests, so it would be
 satisfied, and requiring a badge job asserts nothing.
+
+The three `Cross-compile (Android …)` contexts are the newest entries and the
+easiest to forget, because nothing else in a generated project cross-compiles
+Android: leaving them out is how the gap they were added to close comes back
+with the ruleset saying CI is required. They also run under `publish.yml`, which
+calls the same reusable workflow — so they sit between "start publishing" and
+"published", not only on pull requests.
 
 ### Why Dependabot branches are excluded
 

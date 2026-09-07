@@ -114,7 +114,7 @@ copier copy https://github.com/djx-y-z/copier-dart-frb-wrapper /path/to/destinat
 | `macos_min_version` | `10.15` | macOS minimum deployment target |
 | `android_min_sdk` | `21` | Android minimum SDK version |
 | `android_compile_sdk` | `34` | Android compile SDK version |
-| `android_ndk_version` | `26.3.11579264` | Android NDK version |
+| `android_ndk_version` | `28.2.13676358` | Android NDK version (r28+: Clang 17 cannot assemble OpenSSL 3.6) |
 | `license` | `MIT` | Package license (MIT, Apache-2.0, BSD-3-Clause, etc.) |
 | `topics` | `ffi,native,rust` | pub.dev topics (comma-separated) |
 

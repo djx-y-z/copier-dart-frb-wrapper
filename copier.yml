@@ -242,10 +242,19 @@ android_compile_sdk:
   help: "Android compile SDK version"
   default: "36"
 
+# r28 (Clang 19), not r26 (Clang 17). Anything that vendors OpenSSL 3.6 — and
+# rusqlite reaches it through `openssl-src` the moment
+# `bundled-sqlcipher-vendored-openssl` is on — ships `crypto/sm3/sm3-x86_64.S`,
+# whose Intel SM3 instructions Clang 17 cannot assemble. Measured on the
+# assembler itself: r27's Clang 18 and r28's Clang 19 both take it, r26's
+# Clang 17 does not. A project left on r26 is green on every other gate and
+# fails only when it cross-compiles Android — which, since the native build
+# runs on a release tag rather than on main, means it fails in stage 1 of a
+# release rather than in the pull request that caused it.
 android_ndk_version:
   type: str
-  help: "Android NDK version for Rust cross-compilation"
-  default: "26.3.11579264"
+  help: "Android NDK version for Rust cross-compilation (r28+; older NDKs cannot assemble OpenSSL 3.6)"
+  default: "28.2.13676358"
 
 android_gradle_version:
   type: str

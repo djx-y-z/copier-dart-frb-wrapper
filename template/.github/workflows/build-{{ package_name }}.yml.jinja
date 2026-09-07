@@ -273,11 +273,21 @@ jobs:
       - name: Install NDK
         run: |
           sdkmanager --install "ndk;{{ android_ndk_version }}"
-          echo "ANDROID_NDK_HOME=$ANDROID_SDK_ROOT/ndk/{{ android_ndk_version }}" >> $GITHUB_ENV
+          echo "ANDROID_NDK_HOME=$ANDROID_SDK_ROOT/ndk/{{ android_ndk_version }}" >> "$GITHUB_ENV"
 
       # `--locked` so the tool is built from its own committed lockfile.
       # ⚠ The cargo-ndk VERSION is still unpinned, and this job produces the
-      # shipped Android .so files.
+      # shipped Android .so files. More rides on that than convenience:
+      # cargo-ndk is what passes `-Wl,-z,max-page-size=16384` and its
+      # `common-page-size` twin — read out of the 4.1.2 binary — and those
+      # flags are the only reason the 64-bit libraries come out 16 KB-aligned,
+      # which Google Play has required of an app's bundled native libraries,
+      # for apps targeting Android 15 or later, since 1 November 2025. The NDK
+      # version does not supply it: r26-built and r28-built artefacts both
+      # measure `p_align=0x4000`, and 32-bit `armeabi-v7a` measures 0x1000 on
+      # both, correctly, since the requirement is a 64-bit one. A cargo-ndk
+      # that stopped passing them would make consumer apps unpublishable with
+      # nothing here reporting it.
       - name: Setup cargo-ndk
         run: cargo install cargo-ndk --locked
 {%- if enable_protoc %}

@@ -72,7 +72,7 @@ copier-dart-frb-wrapper/
 | `macos_min_version` | string | `10.15` | macOS minimum deployment target |
 | `android_min_sdk` | string | `21` | Android minimum SDK |
 | `android_compile_sdk` | string | `34` | Android compile SDK |
-| `android_ndk_version` | string | `26.3.11579264` | Android NDK version for Rust |
+| `android_ndk_version` | string | `28.2.13676358` | Android NDK version for Rust (r28+: Clang 17 cannot assemble OpenSSL 3.6) |
 | `android_gradle_version` | string | `8.11.1` | Android Gradle plugin version |
 | `android_java_version` | enum | `17` | Java version for Android compilation (11/17/21) |
 | `license` | enum | `MIT` | Package license |

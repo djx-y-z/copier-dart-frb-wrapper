@@ -165,9 +165,9 @@ copier copy https://github.com/djx-y-z/copier-dart-frb-wrapper . \
 
 | Variable | Description | Default | Example |
 |----------|-------------|---------|---------|
-| `android_min_sdk` | Android minimum SDK version | `21` | `24` |
-| `android_compile_sdk` | Android compile SDK version | `34` | `35` |
-| `android_ndk_version` | Android NDK version for Rust | `26.3.11579264` | `27.0.12077973` |
+| `android_min_sdk` | Android minimum SDK version | `24` | `21` |
+| `android_compile_sdk` | Android compile SDK version | `36` | `35` |
+| `android_ndk_version` | Android NDK version for Rust (r28+) | `28.2.13676358` | `28.1.13356709` |
 | `android_gradle_version` | Android Gradle plugin version | `8.11.1` | `8.7.0` |
 | `android_java_version` | Java version for Android compilation (11, 17 or 21) | `17` | `21` |
 

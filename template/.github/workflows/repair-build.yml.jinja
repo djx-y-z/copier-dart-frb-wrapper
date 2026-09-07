@@ -453,7 +453,7 @@ jobs:
 
       - name: Run the agent (Claude Code)
         if: needs.detect.outputs.engine == 'claude-code'
-        uses: anthropics/claude-code-action@ef8bb1e43bf303cff727a1dd0b8837029fe982a2 # v1.0.215
+        uses: anthropics/claude-code-action@d75b94d5ad426cb8546e6628b6f5f19b84e5cce1 # v1.0.216
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           # Read-only, and only so the action can resolve repository context.
