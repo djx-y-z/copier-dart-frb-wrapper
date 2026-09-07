@@ -1,3 +1,17 @@
+## [Unreleased]
+
+### Changed
+
+- **`protect-main.json` requires the whole test matrix, and `test.yml` drops the path filter that made that impossible** (`template/.github/rulesets/protect-main.json`, `template/.github/workflows/test.yml.jinja`, `template/.github/rulesets/README.md.jinja`) — v4.9.0 required one check and recorded, correctly at the time, that one was all a generated project could require. The obstacle was never the ruleset: a workflow filtered out by a workflow-level `paths:` reports **nothing**, and a required context with no report leaves the pull request waiting forever with nothing to fix, so requiring any `test / …` context while `test.yml` filtered `pull_request` by path would have blocked every documentation-only pull request permanently. Twelve contexts are required now — `FRB bindings were regenerated` plus the whole matrix.
+
+  The filter is gone from `pull_request` and stays on `push`, where it guards the cache scope rather than a gate. That asymmetry is now stated forward in `test.yml`'s own header, because the tempting repair when a docs-only pull request burns the matrix is the filter coming back, and the correct one is a **job-level `if:`** on the expensive legs: a job skipped that way still reports, as `skipped`, and still satisfies the requirement. Measured in the project this comes from before it was done: of the fifteen most recently merged pull requests, fifteen already matched the filter, so the practical change is that the rare docs-only pull request now reports too.
+
+  The runbook section is rewritten around what is required rather than around why only one could be, and gains the two things a generated project needs in order to change the list safely. Verify a context string against a real **pull request** head, not against a push to `main` — the two triggers do not produce the same set of check runs, `Update Coverage Badge` being the example that reports on one and `skipped` on the other, and it is the pull-request set a merge gate is measured against. And apply with `make setup-repo-protections ARGS="--update"`: plain `make setup-repo-protections` skips a ruleset that already exists, so an edited `protect-main.json` would otherwise land in the file and nowhere else.
+
+  A leg a project finds flaky belongs out of `protect-main.json` while still running in the workflow — a required check that fails by itself teaches people to merge past required checks. The source project keeps `test / Test (Linux ARM64)` out on exactly those grounds; the template ships the full list, since flakiness is per project and not a property of the template.
+
+  ⚠ This ruleset is for **generated** projects. It must not be applied to this repository: there is no `codegen-guard.yml` here — the root carries `release.yml` alone — so eleven of the twelve contexts have nobody to report them and every pull request would wait forever.
+
 ## [4.9.0] - 2026-09-07
 
 ### Added
