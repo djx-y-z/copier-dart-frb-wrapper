@@ -100,6 +100,7 @@ test / Test (Windows x86_64)
 test / Security Audit (Rust)
 test / Dependency Policy (cargo-deny)
 test / MSRV (rust-version from Cargo.toml)
+test / Workflow Lint (actionlint)
 test / Cross-compile (Android arm64-v8a)
 test / Cross-compile (Android armeabi-v7a)
 test / Cross-compile (Android x86_64)
@@ -113,6 +114,11 @@ be flaky: a required check that fails by itself teaches people to merge past
 required checks, which costs more than the leg is worth. `test / Update Coverage
 Badge` belongs in neither list — it is skipped on pull requests, so it would be
 satisfied, and requiring a badge job asserts nothing.
+
+`Workflow Lint (actionlint)` is worth requiring for a reason the other legs do
+not share: it is the only check that reads the workflows themselves, so it is
+the one that can still report on a pull request whose other jobs never start
+because the file that defines them does not parse.
 
 The three `Cross-compile (Android …)` contexts are the newest entries and the
 easiest to forget, because nothing else in a generated project cross-compiles
