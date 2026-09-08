@@ -100,8 +100,22 @@ job-level condition on the job that reports.
 
 A required check that fails by itself teaches people to merge past required
 checks, which costs more than the leg is worth. Remove such a leg from
-`protect-main.json` — leaving it in the workflow, where it still reports —
-and put back the moment it is fixed, not before.
+`protect-main.json` — leaving it in the workflow, where it still reports — and
+put it back the moment it is fixed, not before.
+
+Two cautions before deciding which leg that is. **Count, do not rank on
+reputation** — a flake gets attached to one leg early and stays attached; count
+isolated failures (one leg red, the rest green) over recent runs instead. Expect
+the count to be small and to prove less than it looks: three events spread over
+four legs cannot tell a platform problem from chance, and the plausible
+explanations are worth checking against the numbers rather than assumed — "the
+slowest runner flakes" is the usual one, and in the project this comes from it
+was false, the slowest leg by wall clock being the one that never flaked.
+
+**Choose by what the absence costs**, which is knowable even when the cause is
+not: a leg whose platform another required leg already covers is cheap to drop,
+while the only leg covering its platform is not, however often it flakes.
+Diagnosing the flake beats either exclusion.
 
 `test / Update Coverage Badge` belongs in neither list — it is skipped on pull
 requests, so it would be satisfied without asserting anything.
