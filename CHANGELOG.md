@@ -18,7 +18,11 @@
 
   Carried from the project it was written in only after checking it is not about that project: nothing added names a crate, an ecosystem or a domain, and the default-highlight constant and the warning render `native_library_name` exactly like the rules they serve. Verified by rendering both files with a real project's answers — `dart format --set-exit-if-changed` clean, `analyze --fatal-infos` clean, 35 tests passing of which 18 are new, including a multi-line rewritten highlight that must survive and an identical line in a released section that must not be touched.
 
-  ⚠ Still open, and what made that same entry settle for a verdict where a mechanism was available and put one upstream commit in the wrong crate: the prompt is given commit SUBJECT lines, and neither the compare API's file list — which arrives in the response it already makes — nor the lockfile diff.
+  That left one cause standing, and it was the one behind the other two faults in the same entry — the weak verdict where a checkable claim was available, and an upstream commit filed under the wrong crate. A commit subject names a change and not a place, and subject lines were all the prompt had. **The compare API's file list is now fed to it**, at no extra cost: `files` and `commits` arrive in the same payload, and `_fetchUpstreamCommits` was already discarding half of it. It becomes `_fetchUpstreamCompare`, and the two renderers split out as `upstreamCommitsFrom` and `upstreamFilesFrom`, pure and tested.
+
+  The part that had to be designed is the header, not the list. The entry rests on a NEGATIVE claim — the crates we bind changed only this file — which is sound only from an exhaustive list, and the API caps `files` at 300 while saying so nowhere in the payload. So completeness is decided in code, where the counts are, and stated in the words the model reads: COMPLETE licenses reasoning from absence, TRUNCATED withdraws it. A list at exactly 300 entries is assumed truncated though nothing says it is, and the 12000-char cap reaches the same verdict, cutting on a line boundary so no half path is presented as a real one. Rule 3 gains the consequence: with a COMPLETE list neither of its two stock sentences is the best answer, and it now asks for the files those crates actually changed.
+
+  ⚠ Still open: the lockfile diff, which the prompt also never sees. Same family, smaller payoff.
 
 ## [4.12.0] - 2026-09-10
 
