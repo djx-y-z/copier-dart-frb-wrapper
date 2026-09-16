@@ -1,3 +1,21 @@
+## [Unreleased]
+
+### Fixed
+
+- **The file list closed the "where" gap and opened a "which commit" one** (`template/scripts/src/update_changelog.dart.jinja`) — v4.13.0 started feeding the compare API's file list to the prompt, and the next dependency-bump entry a generated project received used it correctly and then invented something the list cannot say. The range held ten upstream commits; two touched a bound crate, one per commit. The entry paired the second commit's FILE with the first commit's SUBJECT, and from that pairing reported a behaviour the second commit does not have — its whole change is an attribute on a struct.
+
+  The payload is flat by construction and this is not a gap that more fetching of the same request closes: `commits[]` carries no files, `files[]` carries no commits, so nothing in the material joins the two. The prompt now states that outright and forbids the inference — name what the range changed, never which commit changed it, and where the entry would turn on WHY a file changed, say this material does not carry it. A model that follows it writes "the range changes `<file>`; which commit did so is not in this data", which is both true and checkable; the failure mode becomes saying less rather than inventing more.
+
+  Two designs were considered and not taken, both worth recording because the second is the tempting one. Per-commit file lists would make attribution real data rather than a prohibition, at one request per commit — the expensive half, and it earns nothing if naming the gap is already enough, so it waits on a measurement instead of a guess. Capping such a fetch at N commits was rejected outright: it withdraws the attribution data exactly when a range is large, which is when attribution is hardest and a model most likely to guess, and it puts a silent quality cliff at a threshold nothing in the output mentions.
+
+- **Rule 4's no-impact phrase gains two preconditions the model can check** (`template/scripts/src/update_changelog.dart.jinja`) — the same entry claimed the update reached the exposed surface AND closed with the phrase saying it does not affect the library's public API. Both cannot hold. `breakingContradictsNoImpact` stayed silent by design: it keys on `**BREAKING:**`, which that entry never wrote, so the contradiction it exists to catch had a second shape nothing was watching.
+
+  The phrase is now false in two cases decidable against material the prompt already supplies. A COMPLETE file list in which a crate named under `Crates bound:` has any SOURCE file changed — source meaning a file that is neither a version string nor a test — is the update reaching the package, whatever the entry concludes about which surface it reaches. And an unchanged FFI surface is not evidence FOR the phrase: a signature can stay identical while the behaviour behind it changes, and a caller sees that change, so clean codegen alone never licenses it. The wording matters more than it looks: an earlier draft said "shipped code ... a file under `src/` is", and a version file living at `<crate>/src/version.rs` satisfies both halves at once — which would have withdrawn the phrase on every routine bump, silently, since a missing phrase reads as a terse entry rather than a broken rule. That second case is the one that shipped — same signature, a call that can now throw where it used to return silently.
+
+  ⚠ This one is asked for in the prompt rather than decided in code, which is the opposite of what v4.13.0 did with its three, so the reason is recorded beside `noImpactPhrase` rather than left to be rediscovered: deciding it in code needs a crate-name-to-path mapping the script does not hold. `changelog-scope.md` names crates, not paths, and that file is `_skip_if_exists` — a check keyed on a line no existing project's copy carries would pass silently in every one of them, which is worse than asking, because it reads as a guard.
+
+  ⚠ Still open, carried forward from v4.13.0: the lockfile diff, which the prompt also never sees.
+
 ## [4.13.0] - 2026-09-16
 
 ### Changed
