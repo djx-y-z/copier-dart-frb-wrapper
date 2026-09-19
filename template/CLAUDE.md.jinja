@@ -201,6 +201,7 @@ make third-party-notices          # Regenerate THIRD_PARTY_NOTICES.txt
 make verify-third-party-notices   # Check it matches the dependency graph
 make verify-frb-pins              # Check every file names the same FRB version
 make verify-android-alignment     # Check built Android libraries are 16 KB-aligned
+make verify-release-artifacts ARGS=<dir>  # Check release archives hold what their names say
 make actionlint                   # Lint the GitHub Actions workflows
 make check-new-{{ package_name }}-version  # Check for new upstream {{ native_library_name }} version
 make check-new-{{ package_name }}-version ARGS="--update"  # Apply update
