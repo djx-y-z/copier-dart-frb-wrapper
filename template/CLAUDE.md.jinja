@@ -500,6 +500,10 @@ sections. Keep this structure so entries stay consistent across releases.
 {%- endif %}
 - **{{ crate_name }} vX.Y.Z** — Rust FFI bindings
 
+#### Added
+
+- **<summary>** — new public API or capability a consumer can call
+
 #### Changed (Breaking)
 
 - **<summary>** — what broke. Include an **Action required:** note.
@@ -515,6 +519,10 @@ sections. Keep this structure so entries stay consistent across releases.
 #### Fixed
 
 - **<summary>** — bug fix
+
+#### Documentation
+
+- **<summary>** — documentation a consumer reads (README, API docstrings, SECURITY.md)
 
 ### For Contributors
 
@@ -537,7 +545,10 @@ Rules:
   adoption).
 - Every bullet starts with a **bold summary** + em-dash, then the detail.
 - Omit any section/subsection with no entries. Order subsections as shown
-  (Highlights → Changed (Breaking) → Changed → Security → Fixed).
+  (Highlights → Added → Changed (Breaking) → Changed → Security → Fixed →
+  Documentation). The order is the list, not a subset of it: `update_changelog`
+  anchors on the first `#### ` under `### For Users`, so a subsection filed out
+  of order moves where later entries land.
 - Released sections are immutable; edit the top pending version until release.
 
 ## Publishing Checklist

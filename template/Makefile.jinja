@@ -8,7 +8,7 @@
 # On Windows CI (Git Bash), use cmd to run fvm.bat from PATH:
 # Example: make build ARGS="--target x86_64-pc-windows-msvc" FVM="cmd //c fvm"
 
-.PHONY: help setup setup-fvm setup-rust-tools setup-frb-codegen setup-android{% if enable_protoc %} setup-protoc{% endif %}{% if enable_web %} setup-web{% endif %}{% if enable_fuzzing %} setup-fuzz{% endif %} codegen regen build build-android{% if enable_web %} build-web run-example-web test-web{% endif %} test coverage analyze format format-check get clean version get-version check-new-{{ package_name }}-version check-exists-{{ package_name }}-frb-release check-template-updates update-template check-targets third-party-notices verify-third-party-notices verify-frb-pins verify-android-alignment verify-release-artifacts actionlint rust-audit rust-deny rust-check rust-test rust-clippy{% if enable_web %} rust-clippy-web{% endif %} rust-doc rust-geiger{% if enable_fuzzing %} fuzz fuzz-list fuzz-seed{% endif %} doc publish publish-dry-run rust-update update-changelog release-frb release setup-repo-protections
+.PHONY: help setup setup-fvm setup-rust-tools setup-frb-codegen setup-android{% if enable_protoc %} setup-protoc{% endif %}{% if enable_web %} setup-web{% endif %}{% if enable_fuzzing %} setup-fuzz{% endif %} codegen regen build build-android{% if enable_web %} build-web run-example-web test-web{% endif %} test coverage analyze format format-check get clean version get-version check-new-{{ package_name }}-version check-exists-{{ package_name }}-frb-release check-template-updates update-template check-targets third-party-notices verify-third-party-notices verify-frb-pins verify-android-alignment verify-release-artifacts verify-library-loads actionlint rust-audit rust-deny rust-check rust-test rust-clippy{% if enable_web %} rust-clippy-web{% endif %} rust-doc rust-geiger{% if enable_fuzzing %} fuzz fuzz-list fuzz-seed{% endif %} doc publish publish-dry-run rust-update update-changelog release-frb release setup-repo-protections
 
 # FVM command - can be overridden to provide full path on Windows CI
 FVM ?= fvm
@@ -74,6 +74,8 @@ help:
 	@echo "    make verify-android-alignment     - Verify built Android libraries are 16 KB-aligned"
 	@echo "    make verify-release-artifacts     - Verify release archives hold what their names say"
 	@echo "                                        Example: make verify-release-artifacts ARGS=release-archives"
+	@echo "    make verify-library-loads         - Load a built native library and check the FRB runtime is in it"
+	@echo "                                        Example: make verify-library-loads ARGS=rust/target/release/lib{{ crate_name }}.dylib"
 	@echo "    make actionlint                   - Lint the GitHub Actions workflows (actionlint)"
 	@echo "    make check-targets                - Check deployment target consistency (iOS/macOS/Android)"
 	@echo "                                        Example: make check-targets ARGS=\"--ios --set 14.0\""
@@ -667,6 +669,22 @@ verify-android-alignment:
 # `download-artifact` unpacked. The release workflow runs it over both.
 verify-release-artifacts:
 	@python3 scripts/verify_release_artifacts.py --crate-name {{ crate_name }} $(ARGS)
+
+# Load a built native library and look up one symbol. Small, and it covers the
+# failure every other check here is blind to: a library that compiles, packs,
+# checksums and attests, and then does not load.
+#
+# `ctypes.CDLL` is the check — loading runs the library's initialisers,
+# resolves its dependencies and refuses a wrong architecture. The symbol is
+# `frb_init_frb_dart_api_dl`, which flutter_rust_bridge exports from its own
+# runtime rather than from generated code, so a library without it is not an
+# FRB library whatever else it is.
+#
+# ⚠ Only on a host that IS the target: a cross-compiled artefact cannot be
+# loaded by the machine that built it. The release workflow runs this on the
+# legs whose runner matches, and nowhere else.
+verify-library-loads:
+	@python3 scripts/verify_library_loads.py $(ARGS)
 
 # Updating the lockfile changes the dependency graph, which invalidates the
 # third-party notice inventory. Regenerating here keeps the two in lockstep

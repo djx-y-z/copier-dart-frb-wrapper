@@ -2,6 +2,16 @@
 
 ### Added
 
+- **Every native library is now loaded before it is shipped** (`template/scripts/verify_library_loads.py`, `template/.github/workflows/build-{{ package_name }}.yml.jinja`, `template/Makefile.jinja`) — the build workflow compiled a library per platform and shipped it without ever loading one. A library that fails at load time — a bad relocation, a dependency that is not on the target, an architecture that does not match its name — passes every other check there is: it compiles, it packs, its checksum matches, its provenance is signed, and the consumer's application is where it first fails.
+
+  `ctypes.CDLL` is the whole check, and it is more than it looks: loading runs the library's initialisers, resolves its dependencies and refuses a wrong architecture. One symbol is then looked up — `frb_init_frb_dart_api_dl`, which flutter_rust_bridge exports from its own `ffi_binding/io.rs` rather than from generated code, so the name is identical in every generated project and a library without it is not an FRB library whatever else it is.
+
+  It runs on the three legs whose runner IS the target — both Linux architectures and macOS arm64 — plus Windows, and nowhere else: a cross-compiled artefact cannot be loaded by the machine that built it, and asking would report an error about the runner. The macOS x86_64 leg is skipped for exactly that reason, since both macOS legs build on an Apple-silicon runner.
+
+  Measured, with the rendered target driving the rendered script over a real library; controls: a file that is not a library, a truncated one, a real shared library that is not FRB (caught by the symbol, having loaded cleanly), a missing path, and no argument at all. ⚠ `ctypes.CDLL` itself was measured on macOS only — the other legs are inference, and the first CI run is the real measurement. The step prints the loader's own message verbatim so that a first red run says which failure it is.
+
+  Python, and called directly rather than through `make`, for the same reason as its neighbours: these build jobs carry Rust and nothing else, and the Windows job has no `make` at all.
+
 - **Release archives are now checked against what their names claim** (`template/scripts/verify_release_artifacts.py.jinja`, `template/.github/workflows/build-{{ package_name }}.yml.jinja`, `template/Makefile.jinja`) — the build workflow ends in a hand-written list of `tar` lines, one per platform, each naming a source directory, and nothing checked that a line names the directory it means to. The failure a slip produces is invisible until a consumer downloads their platform's archive and finds another platform's library in it: the build is green, the checksums match, the provenance attestation signs it.
 
   ⚠ **Checking the architecture would not have caught it**, which is the finding that decided the shape. Measured on a real release's twelve archives: a Linux arm64 `.so` and an Android arm64 `.so` carry the SAME ELF header (ELF64, `e_machine` 0xB7), as do the two x86_64 ones; a macOS arm64, an iOS device and an iOS simulator `.dylib` carry the SAME Mach-O cputype. Those are exactly the pairs a copy-paste slip in that list produces, so an arch-only check is green on the likeliest error.
@@ -49,6 +59,18 @@
   ⚠ A contract for a feature that does not exist yet, recorded here because it is invisible from the other side: the repair commits with the App token, so its commits are authored by the same bot as the branch's own, and any automation gating on "were all the commits here the bot's" — closing superseded update pull requests, for instance — will answer yes. The `agent-repaired` label and a `repair-build: <sha> (agent)` line in the commit message are what can tell the difference, and a branch carrying either must not be closed automatically: it holds reasoning nobody has confirmed. One agent repair per branch, for the same reason.
 
 ### Fixed
+
+- **Five statements in the template that were wrong, stale or half-told** (`template/.github/dependabot.yml.jinja`, `template/.github/actionlint.yaml`, `template/CLAUDE.md.jinja`, `template/CHANGELOG.md.jinja`, `template/.claude/skills/update-{{ package_name }}/SKILL.md.jinja`) — each was carried as a known debt and re-verified against the current template before being touched, since the list was two minors old.
+
+  `dependabot.yml` explained only the half of `increase-if-necessary` that goes well ("leaves a constraint alone when it already admits the new version") while the measured other half — a deliberately capped pin comes back UNCAPPED as a caret once the new version is outside the cap — lived only next to the pin it happened to, in `pubspec.yaml`. The warning now sits where the strategy is configured.
+
+  `actionlint.yaml` said "there is exactly one suppression" two lines above listing two, and contradicted itself again four lines later with "the two findings". It was wrong from the commit that introduced it.
+
+  `CLAUDE.md` prescribed a changelog shape whose `### For Users` list omitted `#### Added` and `#### Documentation`, both of which real releases use. The ordering rule now names the full sequence and says why it is a sequence rather than a menu: `update_changelog` anchors on the first `#### ` under `### For Users`, so a subsection filed out of order moves where later entries land.
+
+  `CHANGELOG.md.jinja` seeded every new project with flat Keep-a-Changelog sections — `### Added` directly under the version — contradicting the audience-split shape the same template's `CLAUDE.md` prescribes and the release scripts assume. The first hand-written entry in a generated repository started in the wrong form.
+
+  The update skill's "Breaking Changes to Watch For" listed a strictly weaker set than its own Step 2 and Step 2b, so the fuller treatment was the one a reader was most likely to miss. It now points there and keeps only what neither step can see: the upstream's own semantics — a protocol version, a cryptographic algorithm, a moved default — which no build here fails over.
 
 - **The file list closed the "where" gap and opened a "which commit" one** (`template/scripts/src/update_changelog.dart.jinja`) — v4.13.0 started feeding the compare API's file list to the prompt, and the next dependency-bump entry a generated project received used it correctly and then invented something the list cannot say. The range held ten upstream commits; two touched a bound crate, one per commit. The entry paired the second commit's FILE with the first commit's SUBJECT, and from that pairing reported a behaviour the second commit does not have — its whole change is an attribute on a struct.
 
