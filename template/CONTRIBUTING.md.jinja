@@ -578,6 +578,9 @@ that cannot go stale. These are the ones a change usually needs:
 | `make test` | Run the Dart test suite |
 | `make analyze` / `make format-check` | The two gates CI runs on every platform |
 | `make doc` / `make rust-doc` | The documentation gates — both BLOCK in CI |
+{%- if enable_web %}
+| `make rust-clippy-web` | Clippy over the wasm32 half of the crate — BLOCKS in CI. `make rust-clippy` is host-only and cannot see it |
+{%- endif %}
 | `make rust-check` / `make rust-clippy` / `make rust-test` | The Rust gates |
 | `make rust-audit` / `make rust-deny` | Advisories, licences, sources |
 | `make third-party-notices` | Regenerate the notice inventory CI verifies |

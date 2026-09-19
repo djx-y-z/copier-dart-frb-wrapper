@@ -409,11 +409,12 @@ String readChangelogScope({Directory? packageDir}) {
 ///
 /// Rule 4 carries a second precondition that is NOT checked here: the phrase is
 /// false when the range changed shipped code in a bound crate. Deciding that in
-/// code needs a crate-name-to-path mapping (`libsignal-protocol` lives under
-/// `rust/protocol/`), and that is project knowledge this script does not hold —
-/// [changelogScopePath] names the crates, not their paths. A check that needed
-/// a line every existing project's scope file lacks would silently pass for all
-/// of them, which is worse than asking the model, so it is asked.
+/// code needs a crate-name-to-path mapping — a crate's name need not be its
+/// directory in the upstream tree — and that is project knowledge this script
+/// does not hold: [changelogScopePath] names the crates, not their paths. A
+/// check that needed a line every existing project's scope file lacks would
+/// silently pass for all of them, which is worse than asking the model, so it
+/// is asked.
 const noImpactPhrase = "do not affect this library's public API";
 
 /// Where [_defaultHighlightTemplate] carries the version.

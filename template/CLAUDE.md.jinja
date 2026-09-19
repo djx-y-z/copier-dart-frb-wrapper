@@ -130,6 +130,9 @@ thing; the README's *Known Limitations* names the escapes.
 ```bash
 make rust-check                   # Check Rust code compiles
 make rust-clippy                  # Lint Rust code with clippy (warnings = errors)
+{% if enable_web -%}
+make rust-clippy-web              # The same lint over the wasm32 half (GATE)
+{% endif -%}
 make rust-doc                     # Rustdoc GATE: intra-doc links, -D warnings
 make rust-geiger                  # Unsafe-expression census (DIAGNOSTIC, not gated)
 make rust-audit                   # Audit Rust dependencies for vulnerabilities
@@ -171,6 +174,18 @@ the prose names the right one.
 `make rust-doc` is the counterpart for the Rust side — the intra-doc links in
 the parts of `rust/src/` that stay in Rust, which `make doc` cannot see. It is
 also a gate (`RUSTDOCFLAGS=-D warnings`), and CI runs it.
+{% if enable_web %}
+**`make rust-clippy` is host-only, and `make rust-clippy-web` is the other
+half.** Not a thoroughness setting: a `cfg(target_arch = "wasm32")` body is a
+different implementation of the same function, so the host pass reads none of
+its lines while reporting green over the file that contains them. CI runs both.
+
+⚠ The wasm32 leg uses `cd rust`, not `--manifest-path`. Cargo finds
+`.cargo/config.toml` relative to the CWD, so invoking it from the repository
+root drops the wasm32 rustflags and lints a configuration the crate never
+builds under — measured as a different compile, not merely different paths in
+the output.
+{% endif %}
 
 `dartdoc_options.yaml` is `.pubignore`d on purpose — pub.dev runs dartdoc itself
 and would honour the same promotion, which could break documentation generation
@@ -540,6 +555,9 @@ make format-check
 make test
 make rust-test
 make rust-clippy
+{%- if enable_web %}
+make rust-clippy-web            # blocking: the wasm32 half, which the above cannot see
+{%- endif %}
 make doc                        # blocking: unresolved doc references
 make rust-doc                   # blocking: intra-doc links{% if enable_web %}, host + wasm32{% endif %}
 {%- if enable_web %}
