@@ -34,7 +34,16 @@ your users — one pulled in transitively, which no crate under "Crates bound"
 names. Say so here, because nothing else will: the prompt is given the compare
 for the upstream repository alone, where such a dependency leaves one trace, a
 version number in a manifest, and nothing about what changed inside it. So name
-it, say what it can affect, and say where to go and read its range.
+it, and say what it can affect — then say that the compare does not cover it, so
+an entry must report the version move and stop rather than infer what changed
+inside.
+
+⚠️ **Do not tell the model to go and fetch that range.** This file is pasted
+into a prompt whose client sends a plain completion with **no tools at all**, so
+an instruction to run a command is one the model cannot follow and can only
+appear to satisfy by inventing the answer — the same failure this section is
+about, one level up. Commands for whoever finishes the pull request belong in
+`CLAUDE.md`, not here.
 
 ## Crates bound and surface exposed
 
