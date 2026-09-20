@@ -1,3 +1,15 @@
+## [Unreleased]
+
+### Changed
+
+- **`anthropics/claude-code-action` moves to v1.0.228 and `android-actions/setup-android` to v4.0.4** (`template/.github/workflows/ai-review.yml`, `template/.github/workflows/repair-build.yml.jinja`, `template/.github/workflows/test-reusable.yml.jinja`, `template/.github/workflows/build-{{ package_name }}.yml.jinja`) — v1.0.222 → v1.0.228 and v4.0.1 → v4.0.4, the bump a generated project's Dependabot proposed and whose full required matrix went green before it was merged there. Both SHAs were resolved by dereferencing the upstream tag ref rather than read out of the pull request body: `refs/tags/v1.0.228` is an *annotated* tag, so its `object.sha` is the tag object and pinning that field would name something no workflow can check out, while `refs/tags/v4.0.4` is lightweight and needs no second call. They resolve to `2261fcfc88e7de1b55f179edd588805e12de71f2` and `be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd`.
+
+  ⚠ **This corrects a released note.** 4.14.0's *Fixed* entry says of the deleted `tools` SDK package that "upstream has no fixed release: v4.0.1 is the latest and `android-actions/setup-android#537` … is filed against exactly this". That is no longer true: v4.0.2 carries the fix (upstream pull request #538) and #537 was closed on 2026-09-17, the same day v4.0.2, v4.0.3 and v4.0.4 were all published.
+
+  The `packages: platform-tools` workaround stays regardless, and not out of caution: it names exactly the package the Android jobs need, where the repaired default is once again `tools platform-tools` minus the dead name. Asking for what is used does not depend on what the default happens to be this release, which is the property that made the original failure possible.
+
+  These pins stay hand-maintained for the reason 4.8.0 records: Dependabot scans `.github/workflows/` at the repository root, everything here lives under `template/`, and it does not parse `.jinja` either.
+
 ## [4.14.0] - 2026-09-20
 
 ### Added
