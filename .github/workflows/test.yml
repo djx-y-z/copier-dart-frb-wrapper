@@ -45,15 +45,31 @@ jobs:
       # line automatically. copier only renders here — it ships nothing — but a
       # version that renders differently would move every generated project.
       - name: Install copier
-        run: pipx install copier==9.11.1
+        run: |
+          set -euo pipefail
+          pipx install copier==9.11.1
+          # copier.yml declares a Jinja extension, and copier loads extensions
+          # from its OWN environment rather than from the template's. Without
+          # this the render fails with "No module named 'jinja2_strcase'" —
+          # which is how this job failed on its first run, while rendering by
+          # hand worked, because a developer machine tends to have it installed
+          # system-wide.
+          pipx inject copier jinja2-strcase==0.0.2
 
       # The five questions with no default. Passing them inline keeps this
       # workflow honest about the minimum answer set rather than hiding it in a
       # fixture file that nobody reads.
+      # ⚠ --vcs-ref=HEAD is load-bearing. For a git template copier renders the
+      # latest TAG by default, so without it this job would smoke-test the last
+      # release instead of the commit that triggered it. Measured: the same
+      # render without the flag produces `_commit: v4.13.0` and none of the
+      # targets added since. It passed on the first run only because the
+      # checkout is shallow and fetched no tags — an accident that would end the
+      # day anyone sets fetch-depth.
       - name: Render with Web support
         run: |
           set -euo pipefail
-          copier copy --trust --defaults --skip-tasks \
+          copier copy --trust --defaults --skip-tasks --vcs-ref=HEAD \
             -d package_name=rendered_check \
             -d description='A rendered smoke test' \
             -d native_library_name=upstream \
@@ -64,7 +80,7 @@ jobs:
       - name: Render without Web support
         run: |
           set -euo pipefail
-          copier copy --trust --defaults --skip-tasks \
+          copier copy --trust --defaults --skip-tasks --vcs-ref=HEAD \
             -d package_name=rendered_check \
             -d description='A rendered smoke test' \
             -d native_library_name=upstream \
