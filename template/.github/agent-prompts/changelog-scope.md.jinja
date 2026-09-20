@@ -21,6 +21,21 @@ prefer concrete names over categories: a model can check "does this change touch
 the `SessionRecord` type" and cannot check "does this change touch state
 management". Name types, functions and crates, not areas of responsibility.
 
+**Write what a change CAN reach, never what one does.** This file is an input to
+a prompt, not documentation, and the model reads it as material it may rely on.
+A sentence asserting that changes to some dependency "change the bytes on the
+wire" is handed over as a standing fact, so it comes back restated as a finding
+about a release nobody checked it against. Phrase the same knowledge as the
+question to answer — what such a change is able to touch, and how to tell
+whether this one did.
+
+That matters most for a dependency in a DIFFERENT repository that still reaches
+your users — one pulled in transitively, which no crate under "Crates bound"
+names. Say so here, because nothing else will: the prompt is given the compare
+for the upstream repository alone, where such a dependency leaves one trace, a
+version number in a manifest, and nothing about what changed inside it. So name
+it, say what it can affect, and say where to go and read its range.
+
 ## Crates bound and surface exposed
 
 {% set _crates = upstream_crates.split(',') | map('trim') | select | list -%}
