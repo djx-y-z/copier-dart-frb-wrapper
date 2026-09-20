@@ -2,6 +2,14 @@
 
 ### Added
 
+- **This repository's own tests and a render of what it produces now run in CI** (`.github/workflows/test.yml`) — until now `make test` was run by whoever remembered to, and a red suite reached `main` that way: the guard refusing a project name inside `template/` was failing, unnoticed, in the same commit that introduced the offending line.
+
+  Two jobs, because they fail for different reasons. `scripts` runs this repository's unit tests. `render` does what no amount of reading the template can: it renders both ways (`enable_web` true and false), compiles every rendered Python script, and runs actionlint over the rendered workflows. A Jinja edit that produces broken YAML, broken Python or an undefined variable is invisible in the source and obvious in the output — and one of the scripts became `.jinja` in this same release, which is exactly the file that can stop being Python without anything here noticing.
+
+  The five questions with no default are passed inline rather than from a fixture, so the workflow states the minimum answer set instead of hiding it. copier and actionlint are both pinned by hand, for the reason the generated projects already give about actionlint: nothing bumps a `pip install` or a `curl` line for you. The rendered-Python step fails when it finds no script to compile, since a check that passes because it looked at nothing is not a check.
+
+  ⚠ A released note (4.10.0) says this repository's root "carries `release.yml` alone" while explaining why the generated projects' merge ruleset must not be applied here. The file count is now two; the reason is unchanged, since that ruleset requires twelve contexts and this repository reports two.
+
 - **Every native library is now loaded before it is shipped** (`template/scripts/verify_library_loads.py`, `template/.github/workflows/build-{{ package_name }}.yml.jinja`, `template/Makefile.jinja`) — the build workflow compiled a library per platform and shipped it without ever loading one. A library that fails at load time — a bad relocation, a dependency that is not on the target, an architecture that does not match its name — passes every other check there is: it compiles, it packs, its checksum matches, its provenance is signed, and the consumer's application is where it first fails.
 
   `ctypes.CDLL` is the whole check, and it is more than it looks: loading runs the library's initialisers, resolves its dependencies and refuses a wrong architecture. One symbol is then looked up — `frb_init_frb_dart_api_dl`, which flutter_rust_bridge exports from its own `ffi_binding/io.rs` rather than from generated code, so the name is identical in every generated project and a library without it is not an FRB library whatever else it is.
@@ -59,6 +67,10 @@
   ⚠ A contract for a feature that does not exist yet, recorded here because it is invisible from the other side: the repair commits with the App token, so its commits are authored by the same bot as the branch's own, and any automation gating on "were all the commits here the bot's" — closing superseded update pull requests, for instance — will answer yes. The `agent-repaired` label and a `repair-build: <sha> (agent)` line in the commit message are what can tell the difference, and a branch carrying either must not be closed automatically: it holds reasoning nobody has confirmed. One agent repair per branch, for the same reason.
 
 ### Fixed
+
+- **A created `#### Changed` was filed above `#### Added`, not below it** (`template/scripts/src/update_changelog.dart.jinja`, `template/test/scripts/update_changelog_test.dart.jinja`) — `insertChangelogEntry` anchors a `#### Changed` it has to create on the first `#### ` heading it meets under `### For Users`, on the reasoning that every other subsection follows `#### Changed` in the documented order. `#### Changed (Breaking)` was excluded because it precedes it. `#### Added` also precedes it, was not excluded, and therefore anchored — so an upstream bump landed above an Added section, out of the order this template states in two places.
+
+  Measured rather than reasoned: with the old code and the new test, the created heading lands at line 10 against an `#### Added` at line 14; with the fix it lands between Added and Fixed. The exclusion is now a named predicate that says what it is for — a subsection that precedes `#### Changed` and is missing from it silently files new entries above itself — so the next subsection added to the documented order has somewhere obvious to be registered.
 
 - **Five statements in the template that were wrong, stale or half-told** (`template/.github/dependabot.yml.jinja`, `template/.github/actionlint.yaml`, `template/CLAUDE.md.jinja`, `template/CHANGELOG.md.jinja`, `template/.claude/skills/update-{{ package_name }}/SKILL.md.jinja`) — each was carried as a known debt and re-verified against the current template before being touched, since the list was two minors old.
 

@@ -1,0 +1,121 @@
+# The tests of this repository, and a render of what it produces.
+#
+# Until this existed, `make test` was run by whoever remembered to run it, and
+# a red suite reached `main` that way — the template's own guard against naming
+# one generated project in `template/` was failing, unnoticed, in the commit
+# that introduced the line.
+#
+# Two jobs, because they fail for different reasons. `scripts` is this
+# repository's own unit tests. `render` is the check that nothing here can do
+# by reading: a Jinja edit that renders to broken YAML, broken Python or an
+# undefined variable is invisible in the source and obvious in the output.
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  scripts:
+    name: Script tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # python3 is preinstalled; `make test` is `python -m unittest` and needs
+      # nothing else.
+      - name: Run the script tests
+        run: make test
+
+  render:
+    name: Render the template
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # Pinned by hand, like actionlint below: nothing bumps a `pip install`
+      # line automatically. copier only renders here — it ships nothing — but a
+      # version that renders differently would move every generated project.
+      - name: Install copier
+        run: pipx install copier==9.11.1
+
+      # The five questions with no default. Passing them inline keeps this
+      # workflow honest about the minimum answer set rather than hiding it in a
+      # fixture file that nobody reads.
+      - name: Render with Web support
+        run: |
+          set -euo pipefail
+          copier copy --trust --defaults --skip-tasks \
+            -d package_name=rendered_check \
+            -d description='A rendered smoke test' \
+            -d native_library_name=upstream \
+            -d github_repo=example/rendered_check \
+            -d native_repo=example/upstream \
+            . "$RUNNER_TEMP/render-web"
+
+      - name: Render without Web support
+        run: |
+          set -euo pipefail
+          copier copy --trust --defaults --skip-tasks \
+            -d package_name=rendered_check \
+            -d description='A rendered smoke test' \
+            -d native_library_name=upstream \
+            -d github_repo=example/rendered_check \
+            -d native_repo=example/upstream \
+            -d enable_web=false \
+            . "$RUNNER_TEMP/render-noweb"
+
+      # A `.jinja` Python script is rendered rather than copied, so a Jinja
+      # edit can produce a file that is no longer Python at all. Compiling is
+      # the cheapest thing that notices.
+      - name: The rendered Python still parses
+        run: |
+          set -euo pipefail
+          for dir in "$RUNNER_TEMP/render-web" "$RUNNER_TEMP/render-noweb"; do
+            found=$(find "$dir/scripts" -name '*.py' | wc -l)
+            if [ "$found" -eq 0 ]; then
+              echo "::error::no rendered Python under $dir/scripts — this check read nothing"
+              exit 1
+            fi
+            find "$dir/scripts" -name '*.py' -print0 | xargs -0 python3 -m py_compile
+            echo "$dir: $found script(s) compile"
+          done
+
+      # Same pin and the same reasoning as the generated project's own workflow
+      # lint: the checksum is taken from that release's checksums.txt, and
+      # Dependabot does not read `curl` lines.
+      - name: Install actionlint
+        env:
+          ACTIONLINT_VERSION: '1.7.12'
+          ACTIONLINT_SHA256: 8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8
+        run: |
+          set -euo pipefail
+          archive="actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz"
+          curl -fsSL -o "$RUNNER_TEMP/$archive" \
+            "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/${archive}"
+          echo "${ACTIONLINT_SHA256}  $RUNNER_TEMP/$archive" | sha256sum --check -
+          mkdir -p "$RUNNER_TEMP/actionlint-bin"
+          tar -xzf "$RUNNER_TEMP/$archive" -C "$RUNNER_TEMP/actionlint-bin" actionlint
+          echo "$RUNNER_TEMP/actionlint-bin" >> "$GITHUB_PATH"
+
+      # actionlint SKIPS every `run:` block when shellcheck is absent and says
+      # so nowhere, so assert it rather than trust it.
+      - name: Assert shellcheck is present
+        run: shellcheck --version
+
+      - name: Lint the rendered workflows
+        run: |
+          set -euo pipefail
+          for dir in "$RUNNER_TEMP/render-web" "$RUNNER_TEMP/render-noweb"; do
+            git -C "$dir" init -q .
+            (cd "$dir" && actionlint)
+            echo "$dir: workflows lint clean"
+          done
