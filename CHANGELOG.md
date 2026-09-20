@@ -10,6 +10,20 @@
 
   These pins stay hand-maintained for the reason 4.8.0 records: Dependabot scans `.github/workflows/` at the repository root, everything here lives under `template/`, and it does not parse `.jinja` either.
 
+### Fixed
+
+- **A local WASM build left over from an older crate version is no longer served silently** (`template/hook/build.dart.jinja`, `template/Makefile.jinja`, `template/test/hook/build_hook_test.dart.jinja`) — the web path of the build hook prefers a local `rust/target/wasm32/` build over the released module, and it took that directory on the sole condition that the two files *exist*. It then recorded `local-dev` in `web/pkg/.wasm-version` rather than a version, so the staleness check guarding the download path — the one 2.2.0 added for exactly this failure — was unreachable on the local path by construction. A module built before a crate bump was copied into `web/pkg/` and served, announced by nothing louder than `Using local WASM build from …`.
+
+  Found in a generated project rather than by reading this template: after cutting a patch release there, `rust/target/wasm32/` still held a module from twelve days earlier, built when the crate and the vendored upstream were both a version behind. A web build would have run it against a package whose native side had already moved.
+
+  ⚠ **`rustContentHash` cannot catch this**, which is the reason the fix is a version stamp rather than a reuse of the check that already crosses the Dart-to-binary boundary. That value compares the FFI *surface*, and a patch release is precisely the case where the surface is byte-identical while the native code behind it changes. Timestamps are no better: a checkout or a stash moves them in either direction with the content unchanged. Neither content nor mtime can say which crate a build came from, so the build has to say so itself.
+
+  `make build-web` now stamps the crate version into `rust/target/wasm32/.crate-version`, using the same first-`version` match the hook's own parser uses, and the hook refuses a local build whose stamp is missing or disagrees with `rust/Cargo.toml`, naming the command that fixes it. A directory built before this release carries no stamp and is rejected — the intended answer rather than an accident. The stamp is declared as a hook dependency too, so re-stamping invalidates a cached result.
+
+  Scope in a generated project: `rust/target/` is `.pubignore`d and absent from the published archive, so a consumer installing from the package registry never reaches this path. It affects the project's own repository and anyone depending on it by path or git who has run `make build-web`. It is also latent rather than active wherever `make run-example-web` is used, since that target depends on `build-web` and rebuilds the module first; the exposed routes are `flutter build web` and a hand-run `flutter run -d chrome`.
+
+  ⚠ Not fixed here, and a different defect that produces the same symptom: `flutter run -d chrome` after a run for another platform reuses that run's `dart_build` stamp — the build directory key does not include the target platform — and skips the build hook outright, so `web/pkg/` is never provisioned at all. `make run-example-web` already deletes that stamp, and the generated README names the limitation. The generated example is a skeleton that does not call `init()`, so the "spinner that never resolves" this produces in an elaborated example has nothing to fix in this template.
+
 ## [4.14.0] - 2026-09-20
 
 ### Added
