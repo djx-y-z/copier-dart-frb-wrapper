@@ -1,3 +1,15 @@
+## [Unreleased]
+
+### Fixed
+
+- **The `setup-android` comment no longer contradicts the pin it annotates** (`template/.github/workflows/test-reusable.yml.jinja`, `template/.github/workflows/build-{{ package_name }}.yml.jinja`) — both files carried "Upstream has no fixed release: v4.0.1 is the latest and android-actions/setup-android#537 is open against exactly this" two lines above `uses: android-actions/setup-android@… # v4.0.4`. Both halves were false by then: #537 closed at 2026-09-17T16:39:37Z and v4.0.2 published six minutes later at 16:45:35Z, with v4.0.3 and v4.0.4 following the same day.
+
+  ⚠ **This is the second release in which the comment stood uncorrected.** 4.14.0 wrote the claim; 4.14.1 moved the pin to v4.0.4 and corrected the claim *in prose* ("⚠ This corrects a released note") while changing nothing in the workflows, so the template shipped a comment contradicting both its own changelog and the line directly beneath it. A correction written into a released changelog section does not reach the file a reader is actually looking at.
+
+  The `packages:` input is untouched, and the reason for keeping it is now stated positively instead of as a consequence of upstream being broken: it names exactly the package these jobs need, and asking for what is used does not depend on what the default happens to be this release — which is the property that made the original failure possible. The defaults were read from the action's own `action.yml` at each pinned SHA rather than from release notes: v4.0.1 defaults to `tools platform-tools`, v4.0.4 to `platform-tools` alone.
+
+- **`__pycache__` is ignored in a generated project** (`template/.gitignore.jinja`) — three of the scripts the template ships are Python (`verify_android_alignment.py`, `verify_library_loads.py`, `verify_release_artifacts.py`), and two of them are invoked as `python3 scripts/…` by release gates, so any local run leaves a `scripts/__pycache__/` beside them that `git add -A` sweeps into a commit. Neither this template's rendered `.gitignore` nor any project generated from it covered it. It is latent rather than active — the directory appears only once somebody runs a gate locally — which is why nothing surfaced it while the Python scripts were being added.
+
 ## [4.14.1] - 2026-09-20
 
 ### Changed
