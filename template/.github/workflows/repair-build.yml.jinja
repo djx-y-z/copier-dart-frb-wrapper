@@ -291,7 +291,17 @@ jobs:
               PR_NUMBER=$(jq -r '.[0].number // ""' <<<"$PR_JSON")
               PR_STATE=$(jq -r '.[0].state // "NONE"' <<<"$PR_JSON")
               CODEGEN_FAILED=$(jq -r '[.[0].labels[]?.name] | index("codegen-failed") != null' <<<"$PR_JSON")
-              CURRENT=$(gh api "repos/$GH_REPO/git/ref/heads/$HEAD_BRANCH" --jq '.object.sha' 2>/dev/null || echo "")
+              # `|| CURRENT=""` and not `|| echo ""` inside the substitution:
+              # `gh api` writes the 404 body to STDOUT, so an `echo` appended to
+              # it rather than replacing it and `CURRENT` came out as
+              # `{"message":"`. An assignment carries the substitution's exit
+              # status, so this replaces the value instead of adding to it.
+              # Measured on a live rehearsal against a branch that had since
+              # been deleted — the warning below printed the JSON fragment where
+              # a commit should have been. Harmless, because any value that is
+              # not the judged sha forces the dry run, but it reads as a bug in
+              # the tool rather than as the branch being gone.
+              CURRENT=$(gh api "repos/$GH_REPO/git/ref/heads/$HEAD_BRANCH" --jq '.object.sha' 2>/dev/null) || CURRENT=""
 
               if [ "$PR_STATE" != "OPEN" ]; then
                 DRY_RUN=true
@@ -305,7 +315,14 @@ jobs:
             # is appended — but the question is the same one, "has CI ruled on
             # what is there NOW", and a repair reasoned about against a
             # superseded tree is wrong for the same reason.
-            if [ "$SHA" != "$CURRENT" ]; then
+            if [ -z "$CURRENT" ]; then
+              # Named its own case rather than falling into the comparison
+              # below, which would report the branch as being at "" . A branch
+              # that no longer exists is the ordinary state of the runs old
+              # enough to rehearse against, not an anomaly.
+              DRY_RUN=true
+              echo "::warning::${HEAD_BRANCH} no longer exists, so nothing can be written to it — forcing a dry run. Run ${REQUESTED_RUN} judged ${SHA:0:12}."
+            elif [ "$SHA" != "$CURRENT" ]; then
               DRY_RUN=true
               echo "::warning::Run ${REQUESTED_RUN} judged ${SHA:0:12} but ${HEAD_BRANCH} is at ${CURRENT:0:12} — forcing a dry run; nothing will be written."
             fi

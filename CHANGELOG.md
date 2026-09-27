@@ -26,6 +26,12 @@
 
 ### Fixed
 
+- **A named run whose branch has since been deleted is reported as that, not as a JSON fragment** (`template/.github/workflows/repair-build.yml.jinja`) — `detect` reads the branch's current head to ask whether CI has ruled on what is there now, and wrote it as `CURRENT=$(gh api … || echo "")`. `gh api` prints a 404 body to *stdout*, so the `echo` appended to that body instead of replacing it and `CURRENT` came out as `{"message":"`. The warning then read `… but update-template-v4.11.0 is at {"message":" — forcing a dry run`.
+
+  Harmless by construction — any value that is not the judged sha forces the dry run, which is the safe direction and is what happened — but it reads as a fault in the tool rather than as the branch being gone. An assignment carries the exit status of its command substitution, so `CURRENT=$(…) || CURRENT=""` replaces the value where `|| echo ""` added to it, and the missing branch now gets its own message instead of falling into a comparison that reports the branch as being at `""`.
+
+  Found by the rehearsal that verified the fix above, which is the only thing that reaches this path: a branch old enough to be safe to rehearse against is one whose pull request was closed, and the branches of closed pull requests here get deleted.
+
 - **The repair agent's permissions no longer come from the tree it is repairing** (`template/.github/workflows/repair-build.yml.jinja`) — `OPENCODE_CONFIG` named the copy of `.github/agent-config/opencode.json` inside `github.workspace`, which is the commit under repair, while the `EXPECTED` set that validates it is baked into the workflow, and a workflow always comes from the default branch. The agent's permissions travelled with the checkout; the assertion about them did not.
 
   It fails closed, so this was availability rather than security — and the class it blocked is exactly `update-template-*`, which is the one combination a template release produces every time: the branch carries the template's new `opencode.json` while the workflow judging it is still the old one. `update-<upstream>-*` was never affected, being cut from the default branch and touching nothing under `.github/`. Found by a live rehearsal rather than by reading, and the failure names the workspace path it read from: `commands this workflow expects that are not allowed: ['make doc', 'make rust-doc']`.
