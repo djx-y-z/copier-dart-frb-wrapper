@@ -140,6 +140,23 @@ upstream_crates:
   help: "Comma-separated list of upstream Rust crates from the same git repo (e.g., 'libsignal-protocol' for single crate, or 'libsignal-protocol,libsignal-core' for multiple). Leave empty if not wrapping an upstream crate."
   default: ""
 
+forbidden_features:
+  type: str
+  help: |
+    Cargo features that must never be enabled in the SHIPPED dependency graph,
+    as 'crate=feat1,feat2;crate2=feat3'. Leave empty for no gate.
+
+    Keyed by crate on purpose. A flat list of feature names cannot express this:
+    the same feature name is usually legitimate on a neighbouring crate, so such
+    a list is red on a healthy tree. Example, from the project this came from:
+    'openmls=test-utils,backtrace' — both leak a symbolized backtrace into the
+    ordinary error channel out to the Dart caller — while openmls_basic_credential
+    carries test-utils deliberately and allo-isolate brings its own backtrace.
+
+    Empty renders NO gate at all, rather than a gate with nothing to check: a
+    check that passes because it looked at nothing is not a check.
+  default: ""
+
 upstream_version:
   type: str
   help: "Version/tag of the upstream crate (e.g., v1.0.0)"

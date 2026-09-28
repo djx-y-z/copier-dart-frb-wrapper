@@ -143,6 +143,22 @@ declare its way out of it — the skip happens above `hooks_runner`, where
 nothing it declares is read. Consumers of the published package hit the same
 thing; the README's *Known Limitations* names the escapes.
 {% endif %}
+{% if forbidden_features %}
+**`make verify-feature-graph` reads the resolved graph, not the manifest.**
+`rust/Cargo.toml` states which features this crate *asks* for; it cannot state
+which features a dependency is *built* with, because cargo unifies features
+across the graph — a transitive dependency can enable one for a crate this
+manifest never mentions. The rules come from the `forbidden_features` copier
+answer and are rendered into `scripts/src/feature_graph.dart`.
+
+⚠ They are keyed **by crate**, and a flat list of feature names would be red on
+a healthy tree: the same name is usually legitimate on a neighbouring crate. A
+crate named in the rules but **absent** from the graph is a failure, not a pass
+— otherwise a renamed dependency silently retires the check.
+
+It runs inside the already-required Linux x86_64 test job, so it adds no
+required status context. CI runs it.
+{% endif %}
 ### Rust Quality
 ```bash
 make rust-check                   # Check Rust code compiles
@@ -217,6 +233,9 @@ make rust-update                  # Update Cargo.lock + regenerate notices
 make third-party-notices          # Regenerate THIRD_PARTY_NOTICES.txt
 make verify-third-party-notices   # Check it matches the dependency graph
 make verify-frb-pins              # Check every file names the same FRB version
+{%- if forbidden_features %}
+make verify-feature-graph         # Check no forbidden cargo feature is enabled (GATE)
+{%- endif %}
 make verify-android-alignment     # Check built Android libraries are 16 KB-aligned
 make verify-release-artifacts ARGS=<dir>  # Check release archives hold what their names say
 make actionlint                   # Lint the GitHub Actions workflows
