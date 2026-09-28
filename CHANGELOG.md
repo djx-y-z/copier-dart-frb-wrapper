@@ -26,6 +26,14 @@
 
 ### Fixed
 
+- **The `.crate-version` stamp stops a web build without explaining itself** (`template/CLAUDE.md.jinja`) — 4.14.1 taught the build hook to refuse a local `rust/target/wasm32/` build whose stamp is missing or disagrees with `rust/Cargo.toml`, and to raise `HookException` rather than substitute silently. The behaviour shipped; the documentation did not. `grep -c crate-version template/CLAUDE.md.jinja` was 0, so the file a generated project reads first said nothing about it.
+
+  That matters because of *when* it bites. Every wasm directory built before 4.14.1 carries no stamp, so the first web build after adopting it fails — by design, and the release note says so, but a generated project's `CLAUDE.md` is what somebody opens when a build stops, and it described a `make build-web` that always worked. The failure reads as a regression the adoption introduced.
+
+  The section now states what the stamp is, that the local build still takes priority and only has to prove which crate produced it, why neither `rustContentHash` nor a timestamp can answer that — the surface is byte-identical across a patch release, and a checkout or a stash moves mtimes in both directions — and that an unstamped directory being rejected is the intended answer, naming the command that fixes it.
+
+  Everything new sits inside `{% if enable_web %}`, and that was verified by rendering rather than by reading: with Web support the section is present, without it `crate-version`, `build-web`, `test-web` and the `### Web` heading are all absent from the rendered `CLAUDE.md`. ⚠ The first attempt at that check was invalid and passed anyway — `-d enable_web=false` was passed through an unquoted shell variable, which zsh hands over as a single argument, so both renders answered `enable_web: true` and the "without Web" leg was really a second copy of the first. The answer file is now read back to confirm which render was produced.
+
 - **A named run whose branch has since been deleted is reported as that, not as a JSON fragment** (`template/.github/workflows/repair-build.yml.jinja`) — `detect` reads the branch's current head to ask whether CI has ruled on what is there now, and wrote it as `CURRENT=$(gh api … || echo "")`. `gh api` prints a 404 body to *stdout*, so the `echo` appended to that body instead of replacing it and `CURRENT` came out as `{"message":"`. The warning then read `… but update-template-v4.11.0 is at {"message":" — forcing a dry run`.
 
   Harmless by construction — any value that is not the judged sha forces the dry run, which is the safe direction and is what happened — but it reads as a fault in the tool rather than as the branch being gone. An assignment carries the exit status of its command substitution, so `CURRENT=$(…) || CURRENT=""` replaces the value where `|| echo ""` added to it, and the missing branch now gets its own message instead of falling into a comparison that reports the branch as being at `""`.
