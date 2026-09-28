@@ -1,3 +1,17 @@
+## [Unreleased]
+
+### Fixed
+
+- **The notices refresh made the pull request it was fixing unmergeable** (`template/.github/workflows/refresh-notices.yml`) — the workflow regenerated `THIRD_PARTY_NOTICES.txt` on a Dependabot cargo branch with an ordinary `git commit` and `git push`, which produces an **unsigned** commit. `signing-commit.json` requires signed commits on `~ALL` branches and excludes exactly `refs/heads/dependabot/**/*`, so that push is accepted — and the file's own comment concluded from this that the API route would only be needed "if that exclusion is ever narrowed."
+
+  ⚠ **The exclusion does not reach the merge, and that is the defect.** `main` is not excluded, so a pull request carrying an unsigned commit cannot be merged into it at all. No approval unblocks it either, because what refuses is `required_signatures` rather than a review rule — which makes it look like a review problem and sends whoever hits it after the wrong fix first.
+
+  Measured on a real pull request in a generated project, not reasoned about: all twelve required contexts green, `statusCheckRollup: SUCCESS`, an approval given by the repository owner, and `mergeStateStatus` still `BLOCKED`. Its two commits were Dependabot's own at `verified: true` — Dependabot signs — and this workflow's at `verified: false, reason: unsigned`. So every cargo pull request that needs a notices refresh, which is all of them, was unmergeable until somebody re-committed the same bytes by hand.
+
+  The commit is now created through GraphQL `createCommitOnBranch`, which signs what it writes. `expectedHeadOid` makes it a compare-and-swap, so a push landing between the read and the write fails the mutation instead of silently reverting it. Attribution still lands on the App rather than on `github.actor` — the mutation credits the token's owner and offers no author override, which is the behaviour wanted here anyway, and it removes the `git config` dance and the `/users/{bot}` lookup that existed only to fake it.
+
+  ⚠ The result is **verified rather than assumed**: the workflow reads `verification.verified` back from the new commit and fails loudly if it is not `true`. A commit the API declined to sign is the exact failure this change exists to prevent, so it is not left to be discovered by the next person who cannot merge.
+
 ## [4.15.0] - 2026-09-28
 
 ### Added
@@ -37,16 +51,6 @@
   ⚠ The duplication did not cause the defect below. That one was reading the wrong ref and was there when there was one copy; what keeps it from returning is the reasoning now written at both sites.
 
 ### Fixed
-
-- **The notices refresh made the pull request it was fixing unmergeable** (`template/.github/workflows/refresh-notices.yml`) — the workflow regenerated `THIRD_PARTY_NOTICES.txt` on a Dependabot cargo branch with an ordinary `git commit` and `git push`, which produces an **unsigned** commit. `signing-commit.json` requires signed commits on `~ALL` branches and excludes exactly `refs/heads/dependabot/**/*`, so that push is accepted — and the file's own comment concluded from this that the API route would only be needed "if that exclusion is ever narrowed."
-
-  ⚠ **The exclusion does not reach the merge, and that is the defect.** `main` is not excluded, so a pull request carrying an unsigned commit cannot be merged into it at all. No approval unblocks it either, because what refuses is `required_signatures` rather than a review rule — which makes it look like a review problem and sends whoever hits it after the wrong fix first.
-
-  Measured on a real pull request in a generated project, not reasoned about: all twelve required contexts green, `statusCheckRollup: SUCCESS`, an approval given by the repository owner, and `mergeStateStatus` still `BLOCKED`. Its two commits were Dependabot's own at `verified: true` — Dependabot signs — and this workflow's at `verified: false, reason: unsigned`. So every cargo pull request that needs a notices refresh, which is all of them, was unmergeable until somebody re-committed the same bytes by hand.
-
-  The commit is now created through GraphQL `createCommitOnBranch`, which signs what it writes. `expectedHeadOid` makes it a compare-and-swap, so a push landing between the read and the write fails the mutation instead of silently reverting it. Attribution still lands on the App rather than on `github.actor` — the mutation credits the token's owner and offers no author override, which is the behaviour wanted here anyway, and it removes the `git config` dance and the `/users/{bot}` lookup that existed only to fake it.
-
-  ⚠ The result is **verified rather than assumed**: the workflow reads `verification.verified` back from the new commit and fails loudly if it is not `true`. A commit the API declined to sign is the exact failure this change exists to prevent, so it is not left to be discovered by the next person who cannot merge.
 
 - **The `.crate-version` stamp stops a web build without explaining itself** (`template/CLAUDE.md.jinja`) — 4.14.1 taught the build hook to refuse a local `rust/target/wasm32/` build whose stamp is missing or disagrees with `rust/Cargo.toml`, and to raise `HookException` rather than substitute silently. The behaviour shipped; the documentation did not. `grep -c crate-version template/CLAUDE.md.jinja` was 0, so the file a generated project reads first said nothing about it.
 
