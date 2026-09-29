@@ -10,6 +10,10 @@
 
   ⚠ **Nothing in the release path could have caught it.** `actionlint` was green on the broken file: shellcheck treats upper-case names as coming from the environment and does not flag them unset, and the fix had not run live anywhere before it shipped — the measurement 4.15.1 cites is of the defect, not of the fix. Found reading the diff while adopting 4.15.1 in a generated project, before its first scheduled run.
 
+- **The signed notices commit handed the whole inventory to `jq` as one argument, which Linux refuses past 128 KiB** (`template/.github/workflows/refresh-notices.yml`) — found by the first live run of the `GH_REPO` fix above, in a generated project whose `THIRD_PARTY_NOTICES.txt` is 500 KB: the `Commit and push` step built its `createCommitOnBranch` payload with `--arg contents "$(base64 -w0 THIRD_PARTY_NOTICES.txt)"`, 667 KB of base64 in a single argument, and stopped on `/usr/bin/jq: Argument list too long`, exit 126, before any request was sent. A single argv string is capped by `MAX_ARG_STRLEN` (32 pages, 128 KiB), independently of the overall `ARG_MAX`. The encoding now goes to `$RUNNER_TEMP/notices.b64` and reaches `jq` through `--rawfile`; built from that project's real inventory, the payload's `contents` decodes back to the file byte for byte.
+
+  ⚠ The threshold is an inventory of about 96 KB, since base64 grows it by a third, and the inventory carries the full licence texts of the whole cargo graph — the one that failed was five times that. Like the `GH_REPO` defect it depends on something no static check reads — here the size of a generated file — so only a run could show it.
+
 ## [4.15.1] - 2026-09-28
 
 ### Fixed
