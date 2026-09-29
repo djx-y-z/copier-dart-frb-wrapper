@@ -335,7 +335,6 @@ jobs:
         env:
           BRANCH: ${{ matrix.pr.branch }}
           PR: ${{ matrix.pr.number }}
-          APP_SLUG: ${{ steps.app-token.outputs.app-slug }}
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           GH_REPO: ${{ github.repository }}
         run: |
