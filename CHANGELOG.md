@@ -2,7 +2,7 @@
 
 ### Changed
 
-- **`anthropics/claude-code-action` moves to v1.0.230** (`template/.github/workflows/ai-review.yml`, `template/.github/workflows/repair-build.yml.jinja`) — v1.0.228 → v1.0.230, the bump a generated project's Dependabot proposed and whose eleven required contexts went green. `refs/tags/v1.0.230` is an *annotated* tag; dereferenced, it resolves to `4036a180cf690f49529f5d8c79c998855287f590`, checked against the upstream ref rather than taken from the pull request body. The two upstream commits in the range only move the bundled Claude Code and Agent SDK, 2.1.275 → 2.1.277.
+- **`anthropics/claude-code-action` moves to v1.0.236** (`template/.github/workflows/ai-review.yml`, `template/.github/workflows/repair-build.yml.jinja`) — v1.0.228 → v1.0.236. A generated project's Dependabot proposed v1.0.230, whose eleven required contexts went green there, and then v1.0.235; v1.0.236 was already released and adds only one more bundled-CLI bump, so the pin goes straight to it. `refs/tags/v1.0.236` is an *annotated* tag; dereferenced, it resolves to `8ce9314fa9a404564fa7e954cd84f25bcba2b829`, checked against the upstream ref rather than taken from a pull request body. Across the range the action itself changes only the bundled Claude Code (2.1.275 → 2.1.284) and its Agent SDK; the other commits touch upstream's own CI.
 
 ### Fixed
 
