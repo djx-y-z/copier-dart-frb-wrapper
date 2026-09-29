@@ -1,5 +1,9 @@
 ## [Unreleased]
 
+### Changed
+
+- **`anthropics/claude-code-action` moves to v1.0.230** (`template/.github/workflows/ai-review.yml`, `template/.github/workflows/repair-build.yml.jinja`) — v1.0.228 → v1.0.230, the bump a generated project's Dependabot proposed and whose eleven required contexts went green. `refs/tags/v1.0.230` is an *annotated* tag; dereferenced, it resolves to `4036a180cf690f49529f5d8c79c998855287f590`, checked against the upstream ref rather than taken from the pull request body. The two upstream commits in the range only move the bundled Claude Code and Agent SDK, 2.1.275 → 2.1.277.
+
 ### Fixed
 
 - **The signed notices commit from 4.15.1 could not run: `GH_REPO` was never set** (`template/.github/workflows/refresh-notices.yml`) — the `Commit and push` step passes `$GH_REPO` to the `createCommitOnBranch` mutation and to the `verification.verified` read-back, under `set -euo pipefail`, and nothing defined it: not the step's `env:`, not `GITHUB_ENV`, and not the runner, which sets `GITHUB_REPOSITORY` and never `GH_REPO`. Every refresh that reached the commit would therefore have stopped on `GH_REPO: unbound variable` before creating anything, leaving the Dependabot cargo pull request exactly as unmergeable as 4.15.1 set out to stop it being — failing loudly, at least, rather than silently. The step's `env:` gains `GH_REPO: ${{ github.repository }}`, and loses `APP_SLUG`, which only fed the `git config` identity and `/users/{bot}` lookup that 4.15.1 removed.
