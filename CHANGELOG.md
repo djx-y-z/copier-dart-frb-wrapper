@@ -1,3 +1,13 @@
+## [Unreleased]
+
+### Fixed
+
+- **An async call could wait forever when another isolate shut down during `init()`** (`template/lib/src/{{ package_name }}.dart.jinja`, `template/lib/src/platform/platform_io.dart.jinja`, `template/lib/src/platform/platform_web.dart.jinja`) — flutter_rust_bridge sends every Rust-to-Dart message (an async call's result, a store callback's invocation) through one process-wide `Dart_PostCObject` pointer, and the finalizer of the last initialized isolate replaces it with a no-op, its guard against posting after `Dart_Cleanup`. `RustLib.init()` installs the real pointer *before* it counts the new isolate, so when the last other counted isolate group shut down inside that window, the new isolate lived on with the no-op: sync calls worked, every async call waited for an answer that had been dropped. `init()` now installs the real pointer again once the isolate is counted, on the io platform — web has neither the pointer nor the count.
+
+  `dart test` runs every test file as an isolate group of one process, so this surfaced there, in a generated project, as the CI flake that timed out one test per run and a different one each time: 26 hangs across all four test legs over three months, always the first test of its file to make an async call. The discriminating case was a file whose first four tests made only sync calls and whose fifth hung — the first to post. Reproduced outside the test runner by shutting one isolate group down while another initializes: 85 hung calls in 600 before the change, none after, and in every hung isolate a new call was answered once the pointer was installed again. flutter_rust_bridge 2.14.0-beta.2 carries the same ordering; the window that remains, a finalizer that has already counted to zero and not yet written the no-op, can only be closed inside flutter_rust_bridge.
+
+  `flutter test` starts a process per test file and never reached this. An application that initializes in its main isolate keeps it counted for its whole life; one that initializes only in short-lived isolates could have.
+
 ## [4.15.2] - 2026-09-29
 
 ### Changed
