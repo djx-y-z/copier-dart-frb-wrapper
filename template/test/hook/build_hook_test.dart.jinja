@@ -98,8 +98,9 @@ void main() {
     // The hook prefers a local `rust/target/wasm32/` build over the released
     // module, so this stamp is the only thing standing between a developer and
     // a silently stale module on the web. `rustContentHash` does not cover it:
-    // that value compares the FFI surface, which a patch release leaves
-    // byte-identical while the vendored native code moves underneath it.
+    // that value hashes only the bridged functions' names, which a patch
+    // release leaves unchanged while the vendored native code moves underneath
+    // them.
     test('accepts a build stamped with the same crate version', () {
       expect(
         build_hook.localWasmMatchesCrate(stamped: '1.5.0', version: '1.5.0'),

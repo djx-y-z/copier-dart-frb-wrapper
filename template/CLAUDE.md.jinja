@@ -75,10 +75,10 @@ substitution. The local build still takes priority over the released module; it
 just has to prove which crate produced it.
 
 The stamp exists because nothing else can answer that question. `rustContentHash`
-cannot: it compares the FFI *surface*, and a patch release is precisely the case
-where the surface is byte-identical while the native code behind it moves.
-Timestamps cannot either — a checkout or a stash moves them in both directions
-with the content unchanged.
+cannot: it hashes only the names of the bridged functions, and a patch release
+is precisely the case where those names stay the same while the native code
+behind them moves. Timestamps cannot either — a checkout or a stash moves them
+in both directions with the content unchanged.
 
 ⚠ **A `rust/target/wasm32/` built before this stamp existed carries none and is
 rejected.** That is the intended answer rather than a regression, and it is what
@@ -595,8 +595,10 @@ Rules:
 Releasing itself is **"Release Flow (two stages)"** above — `make release-frb`,
 then `make release`. Do not bump versions, tag or push by hand: each script
 requires a clean tree, bumps the right file, finalizes the CHANGELOG, and
-creates a **signed** tag (`git tag -s`), which the `Protect release tags`
-ruleset requires. An unsigned `git tag -a` is rejected.
+creates a **signed** tag (`git tag -s`). Do not count on the
+`Protect release tags` ruleset to refuse an unsigned one: it lets only Admin
+and Maintain create a tag at all, and both roles are on its bypass list
+(`always`), its `required_signatures` rule included.
 
 What to have green before starting stage 1:
 
