@@ -48,6 +48,8 @@
 
 - **`make get` passes `ARGS` on** (`template/Makefile.jinja`) — it ran `dart pub get` on the root package whatever it was given, so `make get ARGS="--directory=example_cli"` exited 0 having resolved the wrong package, and on a fresh checkout `make analyze ARGS="example_cli"` failed with `uri_does_not_exist` with no make target to fix it. Measured in a generated project both ways: with `example_cli` unresolved the analysis fails, and after the fixed `make get ARGS="--directory=example_cli"` it is clean; a plain `make get` behaves as before.
 
+- **The README and CLAUDE.md no longer say that a missing `web/pkg/` fails on a 404** (`template/README.md.jinja`, `template/CLAUDE.md.jinja`, `template/Makefile.jinja`) — the call never completes: flutter_rust_bridge 2.13.0's `initializeWasmModule` injects the module as a `<script>` and awaits its `load` event with no error path or timeout, so a missing module — a 404, or, under `flutter run`, the app's own page served in its place with a 200 — leaves the call pending with nothing reported to Dart. Measured in a generated project with `make run-example-web`, the build hook disabled by its skip marker so that `web/pkg/` stayed empty, in headless Chrome: `RustLib.init()` neither returned nor threw for 75 seconds, and `flutter run`'s dev server answered the missing `pkg/<crate>.js` with the app's own HTML page and a 200, which is why no 404 shows in the network tab. All three now say that the call never completes.
+
 ## [4.15.2] - 2026-09-29
 
 ### Changed
