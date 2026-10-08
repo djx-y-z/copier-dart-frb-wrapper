@@ -599,9 +599,9 @@ Releasing itself is **"Release Flow (two stages)"** above — `make release-frb`
 then `make release`. Do not bump versions, tag or push by hand: each script
 requires a clean tree, bumps the right file, finalizes the CHANGELOG, and
 creates a **signed** tag (`git tag -s`). Do not count on the
-`Protect release tags` ruleset to refuse an unsigned one: only the roles on its
-bypass list may create a tag at all, and every one of them bypasses it
-(`always`), its `required_signatures` rule included.
+`Protect release tags` ruleset to refuse an unsigned one: only Admin may create
+a tag at all, and Admin bypasses it (`always`), its `required_signatures` rule
+included.
 
 What to have green before starting stage 1:
 

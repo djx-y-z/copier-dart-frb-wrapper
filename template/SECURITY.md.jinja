@@ -57,7 +57,7 @@ This package implements several security measures:
 
 The native binaries above are published by `build-{{ package_name }}.yml`, triggered by a `{{ crate_name }}-*` tag push or by manual dispatch. Two controls restrict who can cause a publish, mirroring the `pub.dev` environment that gates the pub.dev publish:
 
-- **Tag protection** — a repository ruleset restricts creating, moving, and deleting **all tags**, and requires them signed, for everyone off its bypass list. ⚠ That list holds the `write` role as well as `admin`, so it does not stop a `write` collaborator from minting a release tag (`{{ crate_name }}-*` / `v*`); the approval gate below is what holds on every path.
+- **Tag protection** — a repository ruleset reserves creating, moving, and deleting **all tags** to repository Admins, so a `write` collaborator cannot mint a release tag (`{{ crate_name }}-*` / `v*`) or any other tag. Admins bypass it, its signature rule included; the release scripts sign their tags.
 - **Approval gate** — the publishing job runs in the `native-build` environment, whose required reviewers must approve before any binary is released. Unlike the tag ruleset, this also covers the `workflow_dispatch` path.
 
 Setup, the exact `gh` commands to apply / verify / roll back, and residual risks are in [`.github/rulesets/README.md`](.github/rulesets/README.md).

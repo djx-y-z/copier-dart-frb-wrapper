@@ -1,3 +1,9 @@
+## [Unreleased]
+
+### Changed
+
+- ⚠ **Only an Admin can create, move or delete a tag** (`template/.github/rulesets/protect-release-tags.json.jinja`, `template/.github/rulesets/README.md.jinja`, `template/SECURITY.md.jinja`, `template/CONTRIBUTING.md.jinja`, `template/CLAUDE.md.jinja`, `template/.claude/skills/release-package/SKILL.md.jinja`, `template/.claude/skills/release-frb-crate/SKILL.md.jinja`) — 4.16.0 corrected the documents to say that `actor_id` 4 on `protect-release-tags.json`'s bypass list is `write`, not Maintain, and left the JSON to each project. The list now holds `admin` (5) only, which is what the rulesets README always described, so no `write` collaborator can create, move or delete a tag, signed or not. No workflow creates tags: they react to tags and create GitHub Releases for tags that already exist, and GitHub Apps, Dependabot and `GITHUB_TOKEN` were never on the list. The documents now name Admin as the only role that may. ⚠ **For adopters:** the live ruleset changes only when it is re-applied. The README now shows the single-ruleset `PUT` that does it and touches nothing else. `make setup-repo-protections ARGS="--update"` sends every file, and can reset a parameter GitHub added to a live ruleset that its JSON does not name (measured on a generated project's `Protect main branch`, 2026-10-08).
+
 ## [4.16.0] - 2026-10-08
 
 ### Added
