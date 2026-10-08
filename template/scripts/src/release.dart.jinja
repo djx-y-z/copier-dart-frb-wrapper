@@ -527,8 +527,13 @@ Future<String?> _fileAtRef(String ref, String path) async {
 ///
 /// So the binary's sources are compared as a whole — every entry of `rust/`
 /// except [frbTreeExcluded], and `lib/src/rust/` — with [describeFrbTreeDrift],
+{%- if upstream_crates %}
 /// and the codegen version and upstream pin are also compared by value, with
 /// [describeFrbReleaseDrift], which names them precisely. Any commit touching
+{%- else %}
+/// and the codegen version is also compared by value, with
+/// [describeFrbReleaseDrift], which names it precisely. Any commit touching
+{%- endif %}
 /// those sources after stage 1 therefore needs a new crate.
 ///
 /// Fails closed, including when the comparison cannot be made;
@@ -651,8 +656,13 @@ const frbTreeExcluded = {'rust/fuzz', 'rust/deny.toml'};
 /// read them. A git object's sha is a hash of its content, so equal entries
 /// mean equal files, and a changed one names its directory without a single
 /// file being read. This is the case [describeFrbReleaseDrift] cannot see: a
+{%- if upstream_crates %}
 /// commit to `rust/src` between the two stages moves neither the codegen
 /// version nor the upstream pin. Paths in [excluded] are skipped.
+{%- else %}
+/// commit to `rust/src` between the two stages does not move the codegen
+/// version. Paths in [excluded] are skipped.
+{%- endif %}
 List<String> describeFrbTreeDrift({
   required String tag,
   required Map<String, String> ours,
