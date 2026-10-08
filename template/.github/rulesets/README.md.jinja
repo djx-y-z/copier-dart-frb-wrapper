@@ -59,7 +59,8 @@ drop that one rule.
 ### Required status checks
 
 `protect-main.json` requires twelve checks — **`FRB bindings were regenerated`**,
-the job in `codegen-guard.yml`, plus the whole test matrix:
+the job in `codegen-guard.yml`, plus the whole test matrix except
+`test / Type-check (iOS)`, which is new and not required yet:
 
 ```
 FRB bindings were regenerated
