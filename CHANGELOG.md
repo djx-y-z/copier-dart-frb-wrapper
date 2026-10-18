@@ -1,3 +1,9 @@
+## [Unreleased]
+
+### Fixed
+
+- **The build repair no longer picks a draft pull request** (`template/.github/workflows/repair-build.yml.jinja`) — mode=pr took any red bot pull request labelled `automated`, and the template update carries that label too: it opens as a draft whenever copier leaves conflicts. In a generated project the conflict landed in the Makefile, so `make get` stopped the repair job before the agent started; with no verdict nothing marked the head as answered, and the next run picked the same commit again — 17 red runs between 2026-10-09 and 2026-10-17, all on one unchanged commit. Being the oldest candidate, the draft also kept the dependency update this mode exists for from ever being picked. In a second generated project the conflicts missed the Makefile, so the agent did run, once, and reported a flaky runner. A draft is a pull request a human has to finish, so the scheduled search now leaves drafts alone; a run named through `workflow_dispatch` can still target one, and the "nothing to repair" notice now says that a red draft does not count. ⚠ Any other failure before the agent starts still repeats on every run: a head is marked answered only by a verdict.
+
 ## [4.16.1] - 2026-10-08
 
 ### Changed
