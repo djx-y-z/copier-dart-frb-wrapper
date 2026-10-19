@@ -26,7 +26,7 @@ concurrency:
 jobs:
   scripts:
     name: Script tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v7
 
@@ -37,7 +37,7 @@ jobs:
 
   render:
     name: Render the template
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v7
 

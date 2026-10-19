@@ -187,10 +187,10 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: ubuntu-latest
+          - os: ubuntu-26.04
           - os: macos-latest
 {% if enable_web %}
-          - os: ubuntu-latest
+          - os: ubuntu-26.04
             target: wasm
 {% endif %}
 ```
