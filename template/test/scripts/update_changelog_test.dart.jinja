@@ -497,6 +497,75 @@ void _breakingContradictionTests() {
     });
   });
 
+  group('withStraightQuotes', () {
+    // Replayed for real: the typographic apostrophe of the model's prose next
+    // to the straight one of the rule-4 phrase, in one paragraph.
+    test('straightens apostrophes and quotes, nothing else', () {
+      expect(
+        withStraightQuotes(
+          "this package’s bound crates; “as is”; this library's public API",
+        ),
+        equals(
+          "this package's bound crates; \"as is\"; this library's public API",
+        ),
+      );
+    });
+
+    test('leaves the em-dash and code spans alone', () {
+      const clean = '**Bump** — `Timestamp` gains `TryFrom<SystemTime>`';
+      expect(withStraightQuotes(clean), equals(clean));
+    });
+  });
+
+  group('composeChangedEntry', () {
+    const paragraph = 'Third-party crates move with it: `cc` 1.8.0.';
+
+    // The replayed entry, cut down: the model's last sentence had no full stop,
+    // and the appended paragraph then read as part of it.
+    test('closes an open last sentence before appending the paragraph', () {
+      expect(
+        composeChangedEntry(
+          '- **Bump** — detail.\n\n'
+          "  So these changes do not affect this library's public API",
+          paragraph,
+        ),
+        equals(
+          '- **Bump** — detail.\n\n'
+          "  So these changes do not affect this library's public API.\n\n"
+          '  $paragraph',
+        ),
+      );
+    });
+
+    test('closes a one-paragraph entry that ends on a code span', () {
+      expect(
+        composeChangedEntry('- **Bump** — `version.rs` moves to `0.2`', ''),
+        equals('- **Bump** — `version.rs` moves to `0.2`.'),
+      );
+    });
+
+    test('leaves an ending that is already punctuated', () {
+      for (final end in ['.', '!', '?', ')', ':']) {
+        expect(
+          composeChangedEntry('- **Bump** — detail$end', ''),
+          equals('- **Bump** — detail$end'),
+        );
+      }
+    });
+
+    test('leaves a nested list item without a full stop', () {
+      const entry = '- **Bump** — detail:\n  - `cc` 1.8.0';
+      expect(composeChangedEntry(entry, ''), equals(entry));
+    });
+
+    test('appends nothing when the lockfile moved nothing', () {
+      expect(
+        composeChangedEntry('- **Bump** — detail.  \n', ''),
+        equals('- **Bump** — detail.'),
+      );
+    });
+  });
+
   group('inRepoReleaseNotesFrom', () {
     // Some upstreams publish every release with an EMPTY body and keep the
     // notes in `RELEASE_NOTES.md` instead. Without this the prompt is told

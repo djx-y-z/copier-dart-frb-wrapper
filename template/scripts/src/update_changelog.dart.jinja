@@ -133,9 +133,7 @@ Future<ChangelogUpdate> updateChangelog({
   final nativeHighlight = entry.highlight;
   // The third-party paragraph is the lockfile's, appended rather than asked
   // for; see [thirdPartyParagraphFrom].
-  final changed = lock.paragraph.isEmpty
-      ? entry.changed
-      : '${entry.changed}\n\n  ${lock.paragraph}';
+  final changed = composeChangedEntry(entry.changed, lock.paragraph);
   logInfo('Generated {{ native_library_name }} highlight: $nativeHighlight');
   logInfo('Generated changed entry');
 
@@ -495,6 +493,13 @@ final _gitCheckoutManifest = RegExp(
 /// needs and a name alone does not give — a crate need not live in a directory
 /// of its own name. A crate whose path cannot be read is left out rather than
 /// guessed. Pure; exposed for testing.
+///
+/// Git dependencies only, which is what `rust/Cargo.toml` declares for the
+/// upstream crates and what the update bot reads its tag from. An upstream
+/// taken from crates.io instead is not recognised here, and
+/// [thirdPartyParagraphFrom] would then list its crates as third-party — but
+/// the update bot would already have stopped finding a tag to bump, so that
+/// project has left this generator's contract before it gets here.
 List<UpstreamCrate> upstreamCratesFrom(
   Map<String, dynamic> metadata, {
   required String repo,
@@ -1049,6 +1054,37 @@ String stripLeadingListMarker(String highlight) {
   return marker == null ? trimmed : trimmed.substring(marker.end).trim();
 }
 
+/// [text] with typographic quotes and apostrophes made straight, as everything
+/// else in the CHANGELOG is. Pure; exposed for testing.
+///
+/// A model writing prose reaches for `’` whatever the prompt shows (see
+/// [breakingContradictsNoImpact]), and the entry then mixes it with the
+/// straight apostrophe of [noImpactPhrase] inside one paragraph. Replayed on the
+/// last three upstream bumps, gpt-6-luna did that in two entries of three. The
+/// meaning never changes, so it is settled here rather than asked for.
+String withStraightQuotes(String text) =>
+    text.replaceAll(RegExp('[‘’ʼ]'), "'").replaceAll(RegExp('[“”]'), '"');
+
+/// The `#### Changed` entry as written: the model's [entry], its last sentence
+/// closed, then the script's own [paragraph] when there is one. Pure; exposed
+/// for testing.
+///
+/// The appended paragraph starts a new sentence, so an entry that leaves its
+/// last one open runs straight into it. Replayed on the last three upstream
+/// bumps, one entry of six ended "…do not affect this library's public API"
+/// with no full stop. Only an ending that is plainly a word, a number or a code
+/// span is closed, and never a nested list item, which the house style writes
+/// without one.
+String composeChangedEntry(String entry, String paragraph) {
+  var text = entry.trimRight();
+  final lastLine = text.split('\n').last;
+  final nestedItem = RegExp(r'^\s+(?:[-*+]|\d+\.)\s').hasMatch(lastLine);
+  if (!nestedItem && RegExp(r'[A-Za-z0-9`]$').hasMatch(text)) {
+    text = '$text.';
+  }
+  return paragraph.isEmpty ? text : '$text\n\n  $paragraph';
+}
+
 /// The fields the model must return, and what each one is.
 ///
 /// Doubles as the schema every provider enforces natively, so the JSON contract
@@ -1415,8 +1451,8 @@ code blocks.
   }
 
   return (
-    highlight: stripLeadingListMarker(highlight),
-    changed: changed.trimRight(),
+    highlight: withStraightQuotes(stripLeadingListMarker(highlight)),
+    changed: withStraightQuotes(changed.trimRight()),
     model: response.model,
   );
 }
