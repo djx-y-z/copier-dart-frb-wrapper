@@ -437,8 +437,45 @@ jobs:
             echo
             echo "## Commits"
             echo
-            jq -r '.commits[] | "- \(.oid[0:12]) \(.messageHeadline)"' <<<"$META"
+            jq -r '.commits[] | "- \(.oid[0:12]) \(.messageHeadline) — by \(.authors | map(.login) | join(", "))"' <<<"$META"
+            # Where each file's hunks begin. The read tool hands back a bounded
+            # slice per call — 50 KB in OpenCode — and on a dependency bump the
+            # lockfile hunk sat past 2 600 lines of regenerated notices, beyond
+            # where the first read stopped. An index turns "keep paging and
+            # hope" into "read from line N", and costs one grep.
+            echo
+            echo "## Where each file starts in \`.agent-scratch/pr.diff\`"
+            echo
+            echo "Your read tool returns a bounded slice of a file per call, so a"
+            echo "long diff is not seen whole by reading it once from the top."
+            echo "Read each file's hunks from the line given here."
+            echo
+            grep -n '^diff --git ' .agent-scratch/pr.diff \
+              | sed -E 's|^([0-9]+):diff --git a/(.*) b/.*|- line \1: \2|' || true
           } > .agent-scratch/pr-context.md
+
+          # A CHANGELOG entry in a bot's pull request was written by a model —
+          # the update bot's or the template adoption's — and it is the one
+          # place in such a diff where prose makes claims. Measured on four
+          # dependency bumps: the reviewer judged the entry "consistent" while
+          # it narrated its own inputs and named none of the lockfile's moves,
+          # because nothing said the entry was a model's or what to hold it to.
+          if [ "$AUTHOR_IS_BOT" = "true" ] && jq -e '.files | any(.path == "CHANGELOG.md")' <<<"$META" >/dev/null; then
+            {
+              echo
+              echo "## The CHANGELOG entry in this diff was written by a model"
+              echo
+              echo "The automation that opened this pull request writes its"
+              echo "CHANGELOG text with a model; a later commit by a person (see the"
+              echo "authors above) may have rewritten it. Hold every line the diff"
+              echo "adds to \`CHANGELOG.md\` against the rest of the diff: a version,"
+              echo "crate or file it names must appear in a hunk, and a sentence"
+              echo "about how the entry was written — what it was given, \"the"
+              echo "supplied list\", \"the material does not say\", a list that was"
+              echo "truncated — describes the writer and not the change. Report"
+              echo "either under rule 6."
+            } >> .agent-scratch/pr-context.md
+          fi
 
           # The cold start, enforced here rather than asked for in the prompt.
           #
