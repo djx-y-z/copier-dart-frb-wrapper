@@ -1,3 +1,4 @@
+{%- import "macros/upstream.jinja" as upstream with context -%}
 # Build {{ package_name }} FRB native libraries for all platforms
 #
 # This workflow builds Rust code using cargo and creates GitHub Releases
@@ -659,7 +660,7 @@ jobs:
           **These archives are downloaded automatically by \`hook/build.dart\` during Dart/Flutter builds.**
 
 {%- if upstream_crates %}
-          **Based on [{{ native_library_name }} ${NATIVE_VERSION}](https://github.com/{{ native_repo }}/releases/tag/${NATIVE_VERSION})**
+          **Based on [{{ native_library_name }} ${NATIVE_VERSION}]({{ upstream.release_page('${NATIVE_VERSION}') }})**
 {%- endif %}
 
           ### Platforms

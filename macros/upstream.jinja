@@ -1,0 +1,140 @@
+{#-
+  Everything a rendered file needs to know about `upstream_source`.
+
+  Each template that writes an upstream pin, a link to an upstream release or
+  the dependency policy for upstream sources imports it from here, so a new
+  source is one more branch in each macro below rather than a search through
+  the template. The scripts have their counterpart in
+  `template/scripts/src/upstream_source.dart.jinja`, and the two must agree:
+  what `dependency` writes into rust/Cargo.toml is what `pinFrom` reads back
+  and `rewriteCargoToml` rewrites.
+
+  This file lives outside `template/` on purpose. Copier resolves imports from
+  the template repository's root, not from `_subdirectory`, and nothing outside
+  `_subdirectory` is ever copied — so it is available to every template and
+  reaches no generated project. Import it with context:
+
+    {% from "macros/upstream.jinja" import dependency with context %}
+
+  `upstream_source` is read with a default because copier leaves a skipped
+  question's variable to its default, and every project generated before the
+  question existed is a `git_tag` project.
+-#}
+
+{#- The source's answer, `git_tag` when the question was never asked. -#}
+{%- macro source() -%}
+{{- upstream_source | default('git_tag') -}}
+{%- endmacro -%}
+
+{#- The crate whose version `upstream_version` records. -#}
+{%- macro primary() -%}
+{{- upstream_crates.split(',')[0] | trim -}}
+{%- endmacro -%}
+
+{#- The requirement `upstream_crate_versions` records for `crate`. -#}
+{%- macro crate_requirement(crate) -%}
+{%- for entry in (upstream_crate_versions | default('')).split(',') | map('trim') | select -%}
+{%- if (entry.split('=', 1)[0] | trim) == crate -%}
+{{- entry.split('=', 1)[1] | trim -}}
+{%- endif -%}
+{%- endfor -%}
+{%- endmacro -%}
+
+{#-
+  The value of `<crate> = …` in rust/Cargo.toml.
+
+  git_tag: every upstream crate from native_repo at the one tag.
+  crates_io: the primary crate pinned exactly — the update check reads the
+  current release from it, and a range would leave that to Cargo.lock — and
+  every other crate at the requirement the primary itself declares.
+-#}
+{%- macro dependency(crate) -%}
+{%- if source() == 'crates_io' -%}
+{%- if crate == primary() -%}
+"={{ upstream_version }}"
+{%- else -%}
+"{{ crate_requirement(crate) }}"
+{%- endif -%}
+{%- else -%}
+{ git = "https://github.com/{{ native_repo }}", tag = "{{ upstream_version }}" }
+{%- endif -%}
+{%- endmacro -%}
+
+{#-
+  The pin as a bare version, for display: `v1.2.3` reads `1.2.3`.
+
+  For git_tag this must stay in step with `GitTagSource.semverOf` in
+  upstream_source.dart, which rewrites the README badge on every bump: strip
+  `version_tag_prefix`, and fall back to a bare `v`/`V` when the tag does not
+  carry it. Sliced rather than `replace`d — `replace` would cut the prefix
+  wherever it occurs, not only at the front.
+-#}
+{%- macro version() -%}
+{%- if not upstream_version -%}
+1.0.0
+{%- elif source() == 'crates_io' -%}
+{{- upstream_version -}}
+{%- elif version_tag_prefix and upstream_version.startswith(version_tag_prefix) -%}
+{{- upstream_version[version_tag_prefix | length:] -}}
+{%- elif upstream_version[:1] in ['v', 'V'] -%}
+{{- upstream_version[1:] -}}
+{%- else -%}
+{{- upstream_version -}}
+{%- endif -%}
+{%- endmacro -%}
+
+{#-
+  A page about the upstream release `pin`, which may be a shell expression such
+  as `${NATIVE_VERSION}`: the GitHub release for a tag, the crates.io page for a
+  registry version. Must agree with `pageFor` in upstream_source.dart.
+-#}
+{%- macro release_page(pin) -%}
+{%- if source() == 'crates_io' -%}
+https://crates.io/crates/{{ primary() }}/{{ pin }}
+{%- else -%}
+https://github.com/{{ native_repo }}/releases/tag/{{ pin }}
+{%- endif -%}
+{%- endmacro -%}
+
+{#-
+  An example pin for `version` in the form this source pins by, for commands
+  quoted in documentation: `v1.0.0` for a `v` prefix, `1.0.0` from a registry.
+  A pin of the wrong shape is refused by the scripts, so an example that has
+  one does not work when copied.
+-#}
+{%- macro example_pin(version='1.0.0') -%}
+{%- if source() == 'crates_io' -%}
+{{- version -}}
+{%- else -%}
+{{- version_tag_prefix | default('v') -}}{{- version -}}
+{%- endif -%}
+{%- endmacro -%}
+
+{#- What the link to `release_page` is, in prose. -#}
+{%- macro release_label() -%}
+{%- if source() == 'crates_io' -%}
+page on crates.io
+{%- else -%}
+release notes
+{%- endif -%}
+{%- endmacro -%}
+
+{#- What a pin is called in prose: a `tag`, or a crates.io `version`. -#}
+{%- macro pin_noun() -%}
+{%- if source() == 'crates_io' -%}
+version
+{%- else -%}
+tag
+{%- endif -%}
+{%- endmacro -%}
+
+{#-
+  The git repository the upstream crates are fetched from, or nothing when the
+  source is not a git one — rust/deny.toml allows exactly this, so a registry
+  source leaves no git source allowed for upstream.
+-#}
+{%- macro git_url() -%}
+{%- if upstream_crates and source() == 'git_tag' -%}
+https://github.com/{{ native_repo }}
+{%- endif -%}
+{%- endmacro -%}

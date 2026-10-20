@@ -138,9 +138,11 @@ copier copy https://github.com/djx-y-z/copier-dart-frb-wrapper . \
 
 | Variable | Description | Default | Example |
 |----------|-------------|---------|---------|
-| `upstream_crates` | Upstream Rust crates (comma-separated) | `` | `libsignal-protocol` or `libsignal-protocol,libsignal-core` |
-| `upstream_version` | Version/tag of upstream crate | `` | `v0.86.0` |
-| `version_tag_prefix` | Tag prefix for upstream version tags (used for version normalization) | `v` | `release-v` |
+| `upstream_crates` | Upstream Rust crates (comma-separated); the first is the primary one | `` | `libsignal-protocol` or `libsignal-protocol,libsignal-core` |
+| `upstream_source` | Where the upstream crates come from: `git_tag` (a tag of `native_repo`) or `crates_io` (the registry) | `git_tag` | `crates_io` |
+| `upstream_version` | The pin: the tag with `git_tag`, the primary crate's exact crates.io version with `crates_io` | `` | `v0.86.0`, or `0.86.0` with `crates_io` |
+| `version_tag_prefix` | Tag prefix for upstream version tags (used for version normalization; `git_tag` only) | `v` | `release-v` |
+| `upstream_crate_versions` | `crates_io` with several crates: the requirement on each crate after the first, as the primary crate's release declares it | `` | `libsignal-core=0.6.0` |
 
 ### Flutter/Dart Configuration
 

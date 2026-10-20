@@ -5,10 +5,13 @@
 # one generated project in `template/` was failing, unnoticed, in the commit
 # that introduced the line.
 #
-# Two jobs, because they fail for different reasons. `scripts` is this
+# Three jobs, because they fail for different reasons. `scripts` is this
 # repository's own unit tests. `render` is the check that nothing here can do
 # by reading: a Jinja edit that renders to broken YAML, broken Python or an
 # undefined variable is invisible in the source and obvious in the output.
+# `rendered-scripts` compiles and runs what `render` only renders: the Dart
+# scripts a generated project runs, once for each upstream source, so a source
+# no generated project happens to use is still exercised somewhere.
 name: Tests
 
 on:
@@ -89,13 +92,43 @@ jobs:
             -d enable_web=false \
             . "$RUNNER_TEMP/render-noweb"
 
+      # The two upstream sources render different dependency lines, deny.toml
+      # entries and workflow text; neither render above has upstream crates.
+      - name: Render with upstream crates from a git tag
+        run: |
+          set -euo pipefail
+          copier copy --trust --defaults --skip-tasks --vcs-ref=HEAD \
+            -d package_name=rendered_check \
+            -d description='A rendered smoke test' \
+            -d native_library_name=upstream \
+            -d github_repo=example/rendered_check \
+            -d native_repo=example/upstream \
+            -d upstream_crates=upstream-core,upstream-protocol \
+            -d upstream_version=v1.2.3 \
+            . "$RUNNER_TEMP/render-git-tag"
+
+      - name: Render with upstream crates from crates.io
+        run: |
+          set -euo pipefail
+          copier copy --trust --defaults --skip-tasks --vcs-ref=HEAD \
+            -d package_name=rendered_check \
+            -d description='A rendered smoke test' \
+            -d native_library_name=upstream \
+            -d github_repo=example/rendered_check \
+            -d native_repo=example/upstream \
+            -d upstream_crates=upstream-core,upstream-protocol \
+            -d upstream_source=crates_io \
+            -d upstream_version=1.2.3 \
+            -d upstream_crate_versions=upstream-protocol=0.6.0 \
+            . "$RUNNER_TEMP/render-crates-io"
+
       # A `.jinja` Python script is rendered rather than copied, so a Jinja
       # edit can produce a file that is no longer Python at all. Compiling is
       # the cheapest thing that notices.
       - name: The rendered Python still parses
         run: |
           set -euo pipefail
-          for dir in "$RUNNER_TEMP/render-web" "$RUNNER_TEMP/render-noweb"; do
+          for dir in "$RUNNER_TEMP"/render-*; do
             found=$(find "$dir/scripts" -name '*.py' | wc -l)
             if [ "$found" -eq 0 ]; then
               echo "::error::no rendered Python under $dir/scripts — this check read nothing"
@@ -130,8 +163,85 @@ jobs:
       - name: Lint the rendered workflows
         run: |
           set -euo pipefail
-          for dir in "$RUNNER_TEMP/render-web" "$RUNNER_TEMP/render-noweb"; do
+          for dir in "$RUNNER_TEMP"/render-*; do
             git -C "$dir" init -q .
             (cd "$dir" && actionlint)
             echo "$dir: workflows lint clean"
           done
+
+  rendered-scripts:
+    name: Rendered script tests (${{ matrix.upstream }})
+    runs-on: ubuntu-26.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # The default, said explicitly so that `extra` below is never an
+          # empty array: `set -u` rejects one in bash before 4.4, macOS's
+          # /bin/bash among them, and the step should run as written there too.
+          - upstream: none
+            data: >-
+              -d upstream_crates=
+          - upstream: git_tag
+            data: >-
+              -d upstream_crates=upstream-core,upstream-protocol
+              -d upstream_version=v1.2.3
+          - upstream: crates_io
+            data: >-
+              -d upstream_crates=upstream-core,upstream-protocol
+              -d upstream_source=crates_io
+              -d upstream_version=1.2.3
+              -d upstream_crate_versions=upstream-protocol=0.6.0
+    steps:
+      - uses: actions/checkout@v7
+
+      # Same pins as the render job; see the note there.
+      - name: Install copier
+        run: |
+          set -euo pipefail
+          pipx install copier==9.11.1
+          pipx inject copier jinja2-strcase==0.0.2
+
+      # The SDK the generated projects' Flutter (`flutter_version`, 3.38.4)
+      # ships, pinned rather than `stable`: a newer SDK brings lints of its own,
+      # and this job would then go red over code nobody changed. Move it with
+      # `flutter_version`. Same action pin as setup-fvm in the template.
+      - name: Setup Dart SDK
+        uses: dart-lang/setup-dart@6afc89df92d6eb3834022f73cd65adc8cdfcb92d # v1.8.1
+        with:
+          sdk: 3.10.3
+
+      - name: Render
+        env:
+          DATA: ${{ matrix.data }}
+        run: |
+          set -euo pipefail
+          read -r -a extra <<< "$DATA"
+          copier copy --trust --defaults --skip-tasks --vcs-ref=HEAD \
+            -d package_name=rendered_check \
+            -d description='A rendered smoke test' \
+            -d native_library_name=upstream \
+            -d github_repo=example/rendered_check \
+            -d native_repo=example/upstream \
+            "${extra[@]}" \
+            . "$RUNNER_TEMP/render"
+
+      # What a generated project's `make test` would run over these scripts,
+      # minus the suites that need a Rust toolchain. The hook marker keeps
+      # `dart test` from running the build hook, which would try to download a
+      # native release that does not exist; `dart format` is the last task
+      # copier runs on a real project, skipped above with the others.
+      - name: Analyze and test the rendered scripts
+        working-directory: ${{ runner.temp }}/render
+        run: |
+          set -euo pipefail
+          touch .skip_rendered_check_hook
+          dart pub get
+          dart format scripts test/scripts
+          dart analyze --fatal-infos test/scripts
+          dart test \
+            test/scripts/upstream_source_test.dart \
+            test/scripts/check_updates_test.dart \
+            test/scripts/common_test.dart \
+            test/scripts/release_test.dart \
+            test/scripts/update_changelog_test.dart

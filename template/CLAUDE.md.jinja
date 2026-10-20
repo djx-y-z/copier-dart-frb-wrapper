@@ -1,3 +1,4 @@
+{%- import "macros/upstream.jinja" as upstream with context -%}
 # {{ package_name }} - Claude Code Configuration
 
 ## Important Rules
@@ -249,7 +250,7 @@ make check-template-updates       # Check for copier template updates
 make update-template ARGS="--version vX.Y.Z"  # Apply a template update (runs copier)
 make check-targets                # Check deployment targets (iOS/macOS/Android)
 make check-targets ARGS="--ios --set 14.0"  # Set iOS target everywhere
-make update-changelog ARGS="--version vX.Y.Z"  # Update CHANGELOG with AI
+make update-changelog ARGS="--version {{ upstream.example_pin('X.Y.Z') }}"  # Update CHANGELOG with AI
 make help                         # Show all available commands
 ```
 
@@ -384,9 +385,20 @@ See `.github/rulesets/README.md`.
 
 Two different versions live here, and neither of them is in `pubspec.yaml`:
 
+{% if upstream.source() == 'crates_io' -%}
+- **The upstream {{ native_library_name }} version** is the crates.io version
+  `rust/Cargo.toml` pins `{{ upstream.primary() }}` to — exactly, `"=X.Y.Z"`, on
+  every declaration of it, each target table included. Every other upstream
+  crate is at the requirement that release itself declares, recorded in
+  `upstream_crate_versions` in `.copier-answers.yml`. That is what
+  `make check-new-{{ package_name }}-version` reads and updates, and it finds
+  new releases on crates.io — not through GitHub Releases or tags, which an
+  upstream may name or publish however it likes.
+{% else -%}
 - **The upstream {{ native_library_name }} version** is the git tag in
   `rust/Cargo.toml` — the `tag = "..."` on every upstream dependency line. That
   is what `make check-new-{{ package_name }}-version` reads and updates.
+{% endif -%}
 - **The native crate version** is `[package] version` in `rust/Cargo.toml`.
   `hook/build.dart` parses it out of that file and downloads
   `{{ crate_name }}-<version>` from GitHub Releases, so the copy of
@@ -398,7 +410,7 @@ To check/update the version:
 make check-new-{{ package_name }}-version              # Check for updates
 make check-new-{{ package_name }}-version ARGS="--update"  # Apply update
 make rust-update                    # Update Cargo.lock after version bump
-make update-changelog ARGS="--version v1.0.0"  # Generate AI changelog entry
+make update-changelog ARGS="--version {{ upstream.example_pin('1.0.0') }}"  # Generate AI changelog entry
 ```
 
 ### AI-Powered Changelog
@@ -416,11 +428,11 @@ instead of going quiet.
 
 ```bash
 AI_MODELS=anthropic/claude-opus-5 ANTHROPIC_API_KEY=xxx \
-  make update-changelog ARGS="--version v1.0.0"
+  make update-changelog ARGS="--version {{ upstream.example_pin('1.0.0') }}"
 
 # Pick a different model, or a different order, without touching the code
 AI_MODELS=google/gemini-3.5-flash-lite ANTHROPIC_API_KEY=… GEMINI_API_KEY=… \
-  make update-changelog ARGS="--version v1.0.0"
+  make update-changelog ARGS="--version {{ upstream.example_pin('1.0.0') }}"
 ```
 
 | Variable | Purpose |

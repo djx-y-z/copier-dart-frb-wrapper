@@ -1,26 +1,14 @@
 {#-
-  The upstream tag with its configured prefix removed, so the badge below reads
-  `v1.2.3` whatever `version_tag_prefix` is. This must stay in step with
-  `_normalizeVersion` in scripts/src/check_updates.dart, which rewrites this
-  same badge on every automatic upstream bump: strip `version_tag_prefix`, and
-  fall back to a bare `v`/`V` when the tag does not carry it. Sliced rather than
-  `replace`d — `replace` would cut the prefix string wherever it occurs, not
-  only at the front.
+  The badge below shows the upstream pin as a bare version — `v1.2.3` whatever
+  `version_tag_prefix` or `upstream_source` is — and the update check rewrites
+  it on every bump, so both read it from one definition: `version` in
+  macros/upstream.jinja, kept in step with `semverOf` in
+  scripts/src/upstream_source.dart.
 
-  The closing `endif` is right-trimmed (`-%}`) because its newline would
-  otherwise be the first byte of the rendered README.
+  The import is right-trimmed (`-%}`) because its newline would otherwise be
+  the first byte of the rendered README.
 -#}
-{%- if upstream_version %}
-{%- if version_tag_prefix and upstream_version.startswith(version_tag_prefix) %}
-{%- set _upstream_semver = upstream_version[version_tag_prefix | length:] %}
-{%- elif upstream_version[:1] in ['v', 'V'] %}
-{%- set _upstream_semver = upstream_version[1:] %}
-{%- else %}
-{%- set _upstream_semver = upstream_version %}
-{%- endif %}
-{%- else %}
-{%- set _upstream_semver = '1.0.0' %}
-{%- endif -%}
+{%- import "macros/upstream.jinja" as upstream with context -%}
 # {{ package_name }}
 
 [![pub package](https://img.shields.io/pub/v/{{ package_name }}.svg)](https://pub.dev/packages/{{ package_name }})
@@ -29,7 +17,7 @@
 [![License](https://img.shields.io/badge/license-{{ license | replace('-', '--') }}-blue.svg)](LICENSE)
 [![Dart](https://img.shields.io/badge/dart-%3E%3D3.10.0-brightgreen.svg)](https://dart.dev)
 [![Flutter](https://img.shields.io/badge/flutter-%3E%3D3.38.0-blue.svg)](https://flutter.dev)
-[![{{ native_library_name }}](https://img.shields.io/badge/{{ native_library_name }}-v{{ _upstream_semver }}-orange.svg)](https://github.com/{{ native_repo }})
+[![{{ native_library_name }}](https://img.shields.io/badge/{{ native_library_name }}-v{{ upstream.version() }}-orange.svg)](https://github.com/{{ native_repo }})
 
 {{ description }}
 
@@ -225,7 +213,7 @@ make check-targets
 make rust-update
 
 # Generate AI-powered changelog entry (needs AI_MODELS + a provider key)
-make update-changelog ARGS="--version v1.0.0"
+make update-changelog ARGS="--version {{ upstream.example_pin('1.0.0') }}"
 ```
 
 The CI automatically checks for new {{ native_library_name }} releases daily and creates PRs with:

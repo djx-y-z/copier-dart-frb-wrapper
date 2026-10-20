@@ -27,6 +27,7 @@ copier-dart-frb-wrapper/
 ├── CLAUDE.md               # This file
 ├── LICENSE                 # MIT license
 ├── .claude/skills/         # Claude Code skills for this project
+├── macros/                 # Shared Jinja macros — imported by templates, never copied
 └── template/
     └── {{ package_name }}/ # Template directory (Jinja2 syntax)
         ├── lib/            # Dart library code
@@ -62,9 +63,11 @@ copier-dart-frb-wrapper/
 | `enable_protoc` | boolean | `false` | Enable Protocol Buffers support (install protoc in setup/CI) |
 | `enable_fuzzing` | boolean | `true` | Include a cargo-fuzz harness (rust/fuzz/, Fuzz CI, Makefile targets) |
 | `enable_claude` | boolean | `true` | Include Claude Code files |
-| `upstream_crates` | string | `` | Upstream Rust crates (comma-separated) |
-| `upstream_version` | string | `` | Version of upstream crate |
-| `version_tag_prefix` | string | `v` | Tag prefix for version normalization |
+| `upstream_crates` | string | `` | Upstream Rust crates (comma-separated); the first is the primary one |
+| `upstream_source` | enum | `git_tag` | Where they come from: `git_tag` (a tag of `native_repo`) or `crates_io` (the registry) |
+| `upstream_version` | string | `` | The pin: the tag with `git_tag`, the primary crate's exact version with `crates_io` |
+| `version_tag_prefix` | string | `v` | Tag prefix for version normalization (`git_tag` only) |
+| `upstream_crate_versions` | string | `` | `crates_io` with several crates: `crate=X.Y.Z,...`, the requirement on each crate after the first |
 | `flutter_version` | string | `3.38.4` | Flutter version for FVM |
 | `dart_sdk_version` | string | `^3.10.0` | Dart SDK version constraint |
 | `flutter_sdk_version` | string | `>=3.38.0` | Flutter SDK version constraint |
@@ -140,6 +143,64 @@ copier copy . /tmp/test_upstream \
   --data upstream_crates=libsignal \
   --data upstream_version=v0.86.0
 ```
+
+### With upstream crates from crates.io
+```bash
+copier copy . /tmp/test_crates_io \
+  --trust \
+  --defaults \
+  --vcs-ref HEAD \
+  --data package_name=test_crates_io \
+  --data description="Test crates.io wrapper" \
+  --data native_library_name=upstream \
+  --data github_repo=user/test_crates_io \
+  --data native_repo=owner/upstream \
+  --data upstream_crates=upstream-core,upstream-protocol \
+  --data upstream_source=crates_io \
+  --data upstream_version=1.2.3 \
+  --data upstream_crate_versions=upstream-protocol=0.6.0
+```
+
+## Upstream Sources
+
+`upstream_source` says where the upstream crates come from, and nothing else in
+the template asks the answer directly. Everything that depends on it, prose
+aside, lives in two places:
+
+- `macros/upstream.jinja` — what the rendered files need: the dependency line
+  in `rust/Cargo.toml`, the README badge version, the link to an upstream
+  release, the `allow-git` entry in `rust/deny.toml`, the wording of the update
+  workflow. Imported with `{% import "macros/upstream.jinja" as upstream with
+  context %}`; copier resolves imports from this repository's root, and nothing
+  outside `template/` is copied, so the file reaches no generated project.
+- `template/scripts/src/upstream_source.dart.jinja` — what the scripts need,
+  behind one interface: how a pin is read from and written to `rust/Cargo.toml`,
+  validated, compared, looked up upstream, and mapped to a commit for the
+  CHANGELOG generator. **Every source is compiled into every generated
+  project**; only the constants at the bottom of the file are rendered from the
+  answers. This repository's CI renders projects but compiles them only in
+  `rendered-scripts`, so Dart that Jinja emitted for one source alone would be
+  compiled by no project using another.
+
+Adding a source is therefore: a new value in `copier.yml` (values are
+permanent — an answers file keeps them for as long as the project lives, so
+add, never rename), a class in `upstream_source.dart.jinja` with its tests in
+`template/test/scripts/upstream_source_test.dart.jinja`, a branch in each macro
+of `macros/upstream.jinja`, a validator branch for `upstream_version`, and a
+row in the `rendered-scripts` matrix of `.github/workflows/test.yml`.
+
+Prose is the exception. A sentence that reads differently per source compares
+`upstream.source()` where it stands — in `template/CLAUDE.md.jinja`, the update
+skill, `template/.github/dependabot.yml.jinja` and the update workflow
+(`grep -rln "upstream.source()" template`) — with the `git_tag` wording in its
+`else`, so a new source reads as `git_tag` there until each one is looked at.
+⚠ In an indented file such as YAML, open those branches with `{%- if … %}` at
+the start of a line, never `{% if … -%}`: `-%}` strips the next line's
+indentation along with the newline.
+
+A generated project switches source only by hand — `copier update -d
+upstream_source=<value> -d upstream_version=<pin> ...` — because the update
+bot runs `copier update --defaults` and passes no answers.
 
 ## Files with Conditional Content
 

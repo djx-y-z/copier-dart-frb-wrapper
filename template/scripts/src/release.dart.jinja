@@ -24,6 +24,9 @@ import 'frb_pins.dart';
 import 'pub_limits.dart';
 import 'release_common.dart';
 import 'third_party_notices.dart';
+{%- if upstream_crates %}
+import 'upstream_source.dart';
+{%- endif %}
 
 /// Cut a Dart package release for [version] (plain `X.Y.Z`).
 ///
@@ -629,11 +632,22 @@ List<String> describeFrbReleaseDrift({
   }
 {%- if upstream_crates %}
 
-  final ourUpstream = parseUpstreamTag(ourCargo);
-  final theirUpstream = parseUpstreamTag(theirCargo);
-  if (ourUpstream != theirUpstream) {
+  // This tree's pin must be readable: a tree that cannot name its upstream
+  // is not one to publish from. The one at [tag] may predate a change of
+  // upstream source, and is then drift in its own right rather than a crash.
+  final ourUpstream = upstreamSource.pinFrom(ourCargo);
+  String? theirUpstream;
+  try {
+    theirUpstream = upstreamSource.pinFrom(theirCargo);
+  } on FormatException catch (e) {
     drift.add(
-      '{{ upstream_crates.split(",")[0] | trim }}: this tree pins $ourUpstream, '
+      '${upstreamSource.primary}: this tree pins $ourUpstream, and the pin at '
+      '$tag cannot be read as one: ${e.message}',
+    );
+  }
+  if (theirUpstream != null && ourUpstream != theirUpstream) {
+    drift.add(
+      '${upstreamSource.primary}: this tree pins $ourUpstream, '
       '$tag was built against $theirUpstream',
     );
   }

@@ -137,7 +137,7 @@ frb_version:
 # -----------------------------------------------------------------------------
 upstream_crates:
   type: str
-  help: "Comma-separated list of upstream Rust crates from the same git repo (e.g., 'libsignal-protocol' for single crate, or 'libsignal-protocol,libsignal-core' for multiple). Leave empty if not wrapping an upstream crate."
+  help: "Comma-separated list of upstream Rust crates, all from native_repo (e.g., 'libsignal-protocol' for single crate, or 'libsignal-protocol,libsignal-core' for multiple). The first is the primary crate: its version is the one upstream_version records and the update check follows. Leave empty if not wrapping an upstream crate."
   default: ""
 
 forbidden_features:
@@ -157,10 +157,29 @@ forbidden_features:
     check that passes because it looked at nothing is not a check.
   default: ""
 
-upstream_version:
+# Where the upstream crates come from. Asked before the pin, because what a
+# valid pin looks like depends on it.
+#
+# The values are permanent: an answers file keeps them for as long as the
+# project exists, so a new source is added beside these, never by renaming one.
+# That is why the git one is `git_tag` and not `git` — a git dependency pinned
+# by commit would be a different source with a different pin. Everything that
+# depends on the answer lives in two places, `macros/upstream.jinja` for the
+# rendered files and `template/scripts/src/upstream_source.dart.jinja` for the
+# scripts, which compile every source into every project and pick one.
+upstream_source:
   type: str
-  help: "Version/tag of the upstream crate (e.g., v1.0.0)"
-  default: ""
+  help: >-
+    Where the upstream crates come from. git_tag: a git dependency on
+    native_repo pinned by tag; upstream_version is the tag, and new releases are
+    found through native_repo's GitHub Releases. crates_io: the crates.io
+    registry; upstream_version is the exact version of the primary crate, new
+    releases are found on crates.io whatever upstream names its tags, and every
+    other upstream crate follows the requirement the primary itself declares.
+  choices:
+    "git tag of native_repo": git_tag
+    "crates.io registry": crates_io
+  default: git_tag
   when: "{{ upstream_crates != '' }}"
 
 # -----------------------------------------------------------------------------
@@ -170,7 +189,59 @@ version_tag_prefix:
   type: str
   help: "Tag prefix for upstream version tags (e.g., 'v' for tags like v1.0.0, 'release-v' for tags like release-v1.0.0). Used to normalize versions for comparison and prerelease detection."
   default: "v"
+  when: "{{ upstream_crates != '' and upstream_source == 'git_tag' }}"
+
+upstream_version:
+  type: str
+  help: >-
+    The upstream pin. With upstream_source=git_tag, the tag (e.g., v1.0.0).
+    With upstream_source=crates_io, the exact crates.io version of the primary
+    crate, with no prefix (e.g., 1.0.0).
+  default: ""
   when: "{{ upstream_crates != '' }}"
+  # The same forms the update check accepts (`validatePin` in
+  # scripts/src/upstream_source.dart), so a pin it would refuse on its first
+  # scheduled run is refused here instead, while the answer is still in front of
+  # whoever typed it.
+  validator: >-
+    {% if upstream_source == 'crates_io' %}
+    {%- if not (upstream_version | regex_search('^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(-[0-9A-Za-z-]+(\\.[0-9A-Za-z-]+)*)?$')) %}
+    With upstream_source=crates_io this is the exact crates.io version of the
+    primary crate, X.Y.Z with no tag prefix. Got: "{{ upstream_version }}"
+    {%- endif %}
+    {%- elif not upstream_version.startswith(version_tag_prefix) or not (upstream_version[version_tag_prefix | length:] | regex_search('^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(-[0-9A-Za-z-]+(\\.[0-9A-Za-z-]+)*)?$')) %}
+    With upstream_source=git_tag this is the upstream tag, {{ version_tag_prefix }}X.Y.Z
+    (version_tag_prefix followed by a version). Got: "{{ upstream_version }}"
+    {% endif %}
+
+# The requirement on every upstream crate after the first, which with a registry
+# source cannot be derived from upstream_version: a workspace's crates are
+# versioned independently. The update check rewrites it on every bump, from the
+# requirements the primary crate's own release declares on crates.io.
+upstream_crate_versions:
+  type: str
+  help: >-
+    The version requirement on every upstream crate after the first, as
+    'crate=X.Y.Z,crate2=X.Y.Z' — what the primary crate itself requires of
+    each. A leading '=' pins exactly; without one the requirement is Cargo's
+    default caret range, the same one the primary crate declares.
+  default: ""
+  when: "{{ upstream_crates != '' and upstream_source == 'crates_io' and (upstream_crates.split(',') | map('trim') | select | list | length) > 1 }}"
+  validator: >-
+    {%- set _companions = upstream_crates.split(',') | map('trim') | select | list -%}
+    {%- set _companions = _companions[1:] -%}
+    {%- set _entries = upstream_crate_versions.split(',') | map('trim') | select | list -%}
+    {%- set _names = _entries | map('regex_replace', '=.*$', '') | map('trim') | list -%}
+    {%- if (_names | sort | list) != (_companions | sort | list) %}
+    Give exactly one requirement for each of: {{ _companions | join(', ') }}.
+    Got requirements for: {{ _names | join(', ') or 'none' }}
+    {%- else %}
+    {%- for _entry in _entries %}
+    {%- if not (_entry | regex_search('^[A-Za-z0-9_-]+\\s*=\\s*=?(0|[1-9][0-9]*)(\\.(0|[1-9][0-9]*)(\\.(0|[1-9][0-9]*)(-[0-9A-Za-z-]+(\\.[0-9A-Za-z-]+)*)?)?)?$')) %}
+    "{{ _entry }}" is not crate=X.Y.Z.
+    {%- endif %}
+    {%- endfor %}
+    {%- endif %}
 
 # -----------------------------------------------------------------------------
 # Web/WASM support

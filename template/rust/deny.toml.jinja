@@ -1,3 +1,4 @@
+{%- import "macros/upstream.jinja" as upstream with context -%}
 # cargo-deny configuration for {{ crate_name }}.
 #
 # Runs in CI (see .github/workflows/test-reusable.yml) and locally via
@@ -73,9 +74,12 @@ unknown-registry = "deny"
 unknown-git = "deny"
 allow-registry = ["https://github.com/rust-lang/crates.io-index"]
 allow-git = [
-{%- if upstream_crates %}
+{%- if upstream.git_url() %}
     # Upstream crate repository (pinned by tag in Cargo.toml, by commit in Cargo.lock).
-    "https://github.com/{{ native_repo }}",
+    "{{ upstream.git_url() }}",
+{%- elif upstream_crates %}
+    # None for the upstream crates: they come from crates.io
+    # (upstream_source=crates_io), which allow-registry above already admits.
 {%- endif %}
     # Add any additional git dependency repositories here. Transitive git deps
     # (a crate the upstream itself pulls from git) must be listed explicitly or

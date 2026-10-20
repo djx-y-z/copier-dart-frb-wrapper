@@ -26,6 +26,11 @@ from pathlib import Path
 
 TEMPLATE = Path(__file__).resolve().parent.parent / "template"
 
+# Shared Jinja macros. They live outside `template/` so that copier never
+# copies them, but every template that imports one renders its text into a
+# generated project all the same, so they are held to the same rule.
+MACROS = Path(__file__).resolve().parent.parent / "macros"
+
 # The upstream libraries and the projects wrapping them. Add a name here when a
 # new project is generated: the cost of a false positive is one commit that has
 # to reach for a variable, and the cost of a miss is shipping it to everyone.
@@ -64,9 +69,10 @@ def _offending_lines(path: Path) -> list[tuple[int, str, str]]:
 class NoProjectNamesInTemplate(unittest.TestCase):
     def test_template_names_no_particular_project(self) -> None:
         self.assertTrue(TEMPLATE.is_dir(), f"{TEMPLATE} not found")
+        self.assertTrue(MACROS.is_dir(), f"{MACROS} not found")
 
         findings = []
-        for path in sorted(TEMPLATE.rglob("*")):
+        for path in sorted([*TEMPLATE.rglob("*"), *MACROS.rglob("*")]):
             if not path.is_file():
                 continue
             for lineno, name, line in _offending_lines(path):
@@ -76,7 +82,7 @@ class NoProjectNamesInTemplate(unittest.TestCase):
         self.assertEqual(
             findings,
             [],
-            "template/ must not name one generated project — use the Jinja "
+            "template/ and macros/ must not name one generated project — use the Jinja "
             "variables (`{{ package_name }}`, `{{ native_library_name }}`, "
             "`{{ crate_name }}`) or neutral wording such as 'the upstream "
             "library'. In a file with no `.jinja` suffix there is no "

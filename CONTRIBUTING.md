@@ -116,6 +116,19 @@ rm -rf /tmp/test_upstream && copier copy . /tmp/test_upstream \
   --data upstream_crates=libsignal-protocol \
   --data upstream_version=v0.86.0
 
+# Test with upstream crates from crates.io
+rm -rf /tmp/test_crates_io && copier copy . /tmp/test_crates_io \
+  --trust --vcs-ref HEAD \
+  --data package_name=test_crates_io \
+  --data description="Test crates.io wrapper" \
+  --data native_library_name=upstream \
+  --data github_repo=user/test_crates_io \
+  --data native_repo=owner/upstream \
+  --data upstream_crates=upstream-core,upstream-protocol \
+  --data upstream_source=crates_io \
+  --data upstream_version=1.2.3 \
+  --data upstream_crate_versions=upstream-protocol=0.6.0
+
 # Test full configuration (upstream + web)
 rm -rf /tmp/test_full && copier copy . /tmp/test_full \
   --trust --vcs-ref HEAD \

@@ -1,3 +1,4 @@
+{%- import "macros/upstream.jinja" as upstream with context -%}
 #!/usr/bin/env dart
 
 /// Update CHANGELOG.md with AI-generated entry for {{ native_library_name }} update.
@@ -26,10 +27,10 @@
 ///   ```bash
 ///   # Update changelog for specific version
 ///   AI_MODELS=anthropic/claude-opus-5 ANTHROPIC_API_KEY=xxx \
-///     fvm dart scripts/update_changelog.dart --version v1.0.0
+///     fvm dart scripts/update_changelog.dart --version {{ upstream.example_pin('1.0.0') }}
 ///
 ///   # CI mode (key from environment)
-///   fvm dart scripts/update_changelog.dart --version v1.0.0 --ci
+///   fvm dart scripts/update_changelog.dart --version {{ upstream.example_pin('1.0.0') }} --ci
 ///   ```
 library;
 
@@ -194,9 +195,9 @@ Environment:
 Examples:
   # Update changelog for specific version
   AI_MODELS=anthropic/claude-opus-5 ANTHROPIC_API_KEY=xxx \
-    fvm dart scripts/update_changelog.dart --version v1.0.0
+    fvm dart scripts/update_changelog.dart --version {{ upstream.example_pin('1.0.0') }}
 
   # CI mode (key from environment)
-  fvm dart scripts/update_changelog.dart --version v1.0.0 --ci
+  fvm dart scripts/update_changelog.dart --version {{ upstream.example_pin('1.0.0') }} --ci
 ''');
 }

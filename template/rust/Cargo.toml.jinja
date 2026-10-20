@@ -1,3 +1,4 @@
+{%- import "macros/upstream.jinja" as upstream with context -%}
 [package]
 name = "{{ crate_name }}"
 version = "1.0.0"
@@ -23,7 +24,7 @@ thiserror = "2.0"
 log = "0.4"
 {%- if upstream_crates %}
 {%- for crate in upstream_crates.split(',') %}
-{{ crate | trim }} = { git = "https://github.com/{{ native_repo }}", tag = "{{ upstream_version }}" }
+{{ crate | trim }} = {{ upstream.dependency(crate | trim) }}
 {%- endfor %}
 {%- endif %}
 {%- if enable_web %}
