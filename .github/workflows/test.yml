@@ -282,3 +282,20 @@ jobs:
             tests+=(test/scripts/upstream_advisories_test.dart)
           fi
           dart test "${tests[@]}"
+
+      # The build hook against both sides of its `hooks`/`code_assets` range.
+      # The resolution above takes 2.x — the package has no `flutter: sdk`
+      # dependency — while an app on Flutter 3.38–3.44, where Flutter pins
+      # `meta` below what hooks >= 2.1.0 needs, gets hooks 2.0.x with
+      # code_assets 1.x, which nothing else here compiles. The override pins
+      # the set measured on 3.38.4.
+      - name: Analyze the build hook against both majors it admits
+        working-directory: ${{ runner.temp }}/render
+        run: |
+          set -euo pipefail
+          dart analyze --fatal-infos hook/
+          printf 'dependency_overrides:\n  hooks: 2.0.2\n  code_assets: 1.2.1\n' \
+            > pubspec_overrides.yaml
+          dart pub get
+          grep -A2 -E '^  (hooks|code_assets):$' pubspec.lock
+          dart analyze --fatal-infos hook/
