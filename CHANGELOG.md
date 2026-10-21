@@ -7,6 +7,7 @@
 ### Fixed
 
 - **`updateChangelog()` has its doc comment back** (`template/scripts/src/update_changelog.dart.jinja`) — 4.14.0 inserted `class ChangelogUpdate` between the function and the first two lines of its documentation, so the class's documentation opened with "Update CHANGELOG.md with a new … version entry." and the function's lost its summary. Each is where it belongs again.
+- **The update bot's CHANGELOG entry no longer leaves two blank lines under Highlights** (`template/scripts/src/update_changelog.dart.jinja`, `template/test/scripts/update_changelog_test.dart.jinja`) — when the previous bump's default Highlights line was the only line in its block, dropping it left the blank line from either side of it, and the new line went in above both. Measured in a generated project: its next bump arrived with two blank lines before `#### Changed`, removed by hand, and every bump after the first in a release window would have needed the same edit. The emptied block is now written with one blank line on each side of the new line. Replayed on that bump's real input, the generator produces the `CHANGELOG.md` that was merged, byte for byte; the same replay before the fix gives the extra line.
 
 ## [4.17.0] - 2026-10-20
 
