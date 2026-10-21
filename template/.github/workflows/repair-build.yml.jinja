@@ -1,4 +1,4 @@
-{% raw %}# Propose a fix when CI is red.
+{%- import "macros/upstream.jinja" as upstream with context -%}{% raw %}# Propose a fix when CI is red.
 #
 # TWO SHAPES OF RED, and the difference between them is the reason this file is
 # as long as it is:
@@ -1143,7 +1143,45 @@ jobs:
       # which says what no longer fits and never what would. So the source is
       # copied to where the agent can read it, by a step rather than by a grant.
       #
-      # Only git dependencies, which is what an upstream pinned by tag is here;
+{% endraw %}{% if upstream_crates and upstream.source() == 'crates_io' %}{% raw %}      # Only the upstream crates, picked by name: they come from crates.io here,
+      # where a crate's source says nothing about whose it is, and registry
+      # crates in general are not what this workflow repairs against. Measured
+      # on a crates.io project with five upstream crates: about 3.7 MB.
+      - name: Vendor the upstream source the agent may read
+        if: needs.detect.outputs.mode == 'pr'
+        env:
+          UPSTREAM_CRATES: '{% endraw %}{{ upstream_crates.split(',') | map('trim') | select | list | tojson }}{% raw %}'
+        run: |
+          set -uo pipefail
+          UP=.agent-scratch/upstream
+          mkdir -p "$UP"
+
+          # No `--locked`: a lockfile that does not match would abort the whole
+          # step, and this is evidence rather than a gate. If it fails, the
+          # agent is told the directory is absent and carries on without it.
+          ( cd rust && cargo metadata --format-version 1 ) 2>/dev/null \
+            | jq -r --argjson names "$UPSTREAM_CRATES" '.packages[]
+                     | select(.source != null and (.source | startswith("registry+"))
+                              and (.name | IN($names[])))
+                     | [.name, .manifest_path] | @tsv' > "$RUNNER_TEMP/upstream-deps.tsv" || true
+
+          COPIED=0
+          while IFS=$'\t' read -r name manifest; do
+            [ -n "${manifest:-}" ] || continue
+            src="$(dirname "$manifest")/src"
+            [ -d "$src" ] || continue
+            mkdir -p "$UP/$name"
+            cp -R "$src" "$UP/$name/" 2>/dev/null && COPIED=$((COPIED + 1))
+          done < "$RUNNER_TEMP/upstream-deps.tsv"
+
+          if [ "$COPIED" = 0 ]; then
+            rm -rf "$UP"
+            echo "::warning::None of the upstream crates resolved from crates.io, so there is no upstream source to read. The agent will be working from error text alone."
+          else
+            echo "Vendored $COPIED upstream crate(s), $(du -sh "$UP" | cut -f1)."
+          fi
+          exit 0
+{% endraw %}{% else %}{% raw %}      # Only git dependencies, which is what an upstream pinned by tag is here;
       # registry crates are not what this workflow repairs against. Measured on
       # this repository: five crates, about a megabyte in total.
       - name: Vendor the upstream source the agent may read
@@ -1177,7 +1215,7 @@ jobs:
             echo "Vendored $COPIED upstream crate(s), $(du -sh "$UP" | cut -f1)."
           fi
           exit 0
-
+{% endraw %}{% endif %}{% raw %}
       # The deterministic route, and on this repository's history the one that
       # answers most of these. `codegen-failed` says the update workflow could
       # not RUN the generator — which is a different thing from upstream having

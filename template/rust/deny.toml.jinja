@@ -62,10 +62,20 @@ exceptions = []
 [bans]
 # Diamond dependencies are common in crypto/WASM trees, so duplicates warn.
 multiple-versions = "warn"
+{%- if upstream_crates and upstream.source() == 'crates_io' %}
+# Every upstream crate comes from crates.io with a version requirement, and so
+# does everything it pulls in — crates.io accepts no dependency that is only a
+# git one — so a wildcard here is a mistake rather than a pin, and it fails. A
+# path dependency of this unpublished crate is not one; a git dependency you add
+# needs a `version` beside its `git`, as well as an `allow-git` entry below.
+wildcards = "deny"
+allow-wildcard-paths = true
+{%- else %}
 # Git dependencies pinned by tag (with no version requirement) are reported as
 # wildcards, so wildcards warn rather than fail; a genuinely sloppy `"*"`
 # crates.io dependency still shows up in the log.
 wildcards = "warn"
+{%- endif %}
 allow = []
 deny = []
 
