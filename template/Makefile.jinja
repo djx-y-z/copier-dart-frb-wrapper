@@ -9,7 +9,7 @@
 # On Windows CI (Git Bash), use cmd to run fvm.bat from PATH:
 # Example: make build ARGS="--target x86_64-pc-windows-msvc" FVM="cmd //c fvm"
 
-.PHONY: help setup setup-fvm setup-rust-tools setup-frb-codegen setup-android{% if enable_protoc %} setup-protoc{% endif %}{% if enable_web %} setup-web{% endif %}{% if enable_fuzzing %} setup-fuzz{% endif %} codegen regen build build-android{% if enable_web %} build-web run-example-web test-web{% endif %} test coverage analyze format format-check get clean version get-version check-new-{{ package_name }}-version check-exists-{{ package_name }}-frb-release check-template-updates update-template check-targets third-party-notices verify-third-party-notices verify-frb-pins verify-pub-limits{% if forbidden_features %} verify-feature-graph{% endif %} verify-android-alignment verify-release-artifacts verify-library-loads actionlint rust-audit rust-deny rust-check rust-check-ios rust-test rust-clippy{% if enable_web %} rust-clippy-web{% endif %} rust-doc rust-geiger{% if enable_fuzzing %} fuzz fuzz-list fuzz-seed{% endif %} doc publish publish-dry-run rust-update update-changelog release-frb release setup-repo-protections
+.PHONY: help setup setup-fvm setup-rust-tools setup-frb-codegen setup-android{% if enable_protoc %} setup-protoc{% endif %}{% if enable_web %} setup-web{% endif %}{% if enable_fuzzing %} setup-fuzz{% endif %} codegen regen build build-android{% if enable_web %} build-web run-example-web test-web{% endif %} test coverage analyze format format-check get clean version get-version check-new-{{ package_name }}-version{% if enable_upstream_advisories and upstream_crates %} check-upstream-advisories{% endif %} check-exists-{{ package_name }}-frb-release check-template-updates update-template check-targets third-party-notices verify-third-party-notices verify-frb-pins verify-pub-limits{% if forbidden_features %} verify-feature-graph{% endif %} verify-android-alignment verify-release-artifacts verify-library-loads actionlint rust-audit rust-deny rust-check rust-check-ios rust-test rust-clippy{% if enable_web %} rust-clippy-web{% endif %} rust-doc rust-geiger{% if enable_fuzzing %} fuzz fuzz-list fuzz-seed{% endif %} doc publish publish-dry-run rust-update update-changelog release-frb release setup-repo-protections
 
 # FVM command - can be overridden to provide full path on Windows CI
 FVM ?= fvm
@@ -65,6 +65,9 @@ help:
 	@echo "  CI / VERSION CHECKS"
 	@echo "    make check-new-{{ package_name }}-version  - Check for new upstream {{ native_library_name }} version"
 	@echo "                                        Example: make check-new-{{ package_name }}-version ARGS=\"--update\""
+{%- if enable_upstream_advisories and upstream_crates %}
+	@echo "    make check-upstream-advisories    - Check {{ native_repo }}'s published advisories against Cargo.lock"
+{%- endif %}
 	@echo "    make check-exists-{{ package_name }}-frb-release - Check if FRB release exists on GitHub"
 	@echo "    make check-template-updates       - Check for new copier template version"
 	@echo "    make update-template              - Apply a copier template update"
@@ -655,6 +658,16 @@ fuzz-seed:
 
 check-new-{{ package_name }}-version:
 	@$(FVM) dart scripts/check_new_upstream_version.dart $(ARGS)
+{%- if enable_upstream_advisories and upstream_crates %}
+
+# {{ native_repo }}'s published security advisories, held against the crates
+# rust/Cargo.lock resolves: neither rust-audit (RustSec) nor Dependabot
+# (GitHub's global database) is guaranteed to see them. Run daily by
+# check-{{ package_name }}-updates.yml. Exits 1 when one covers a locked
+# version, 2 when they could not be fetched — which make reports as 2 either way.
+check-upstream-advisories:
+	@$(FVM) dart scripts/check_upstream_advisories.dart $(ARGS)
+{%- endif %}
 
 check-exists-{{ package_name }}-frb-release:
 	@$(FVM) dart scripts/check_exists_frb_release.dart $(ARGS)

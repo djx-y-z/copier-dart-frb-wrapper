@@ -243,6 +243,19 @@ upstream_crate_versions:
     {%- endfor %}
     {%- endif %}
 
+enable_upstream_advisories:
+  type: bool
+  help: >-
+    Check native_repo's published GitHub security advisories against the
+    upstream crates rust/Cargo.lock resolves (make check-upstream-advisories),
+    daily beside the update check: a locked version an advisory covers, or a
+    check that could not run, turns the scheduled run red. An upstream that
+    publishes advisories only in its own repository reaches neither RustSec,
+    which make rust-audit reads, nor GitHub's global database, which Dependabot
+    reads, until someone files it there.
+  default: true
+  when: "{{ upstream_crates != '' }}"
+
 # -----------------------------------------------------------------------------
 # Web/WASM support
 # -----------------------------------------------------------------------------

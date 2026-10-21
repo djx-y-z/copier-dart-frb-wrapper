@@ -122,6 +122,36 @@ jobs:
             -d upstream_crate_versions=upstream-protocol=0.6.0 \
             . "$RUNNER_TEMP/render-crates-io"
 
+      # The advisory check is on by default wherever there are upstream crates,
+      # so the renders above all carry it; this one turns it off, and asserts
+      # that every file it guards is gone rather than half-rendered.
+      - name: Render with the upstream advisory check off
+        run: |
+          set -euo pipefail
+          dest="$RUNNER_TEMP/render-advisories-off"
+          copier copy --trust --defaults --skip-tasks --vcs-ref=HEAD \
+            -d package_name=rendered_check \
+            -d description='A rendered smoke test' \
+            -d native_library_name=upstream \
+            -d github_repo=example/rendered_check \
+            -d native_repo=example/upstream \
+            -d upstream_crates=upstream-core,upstream-protocol \
+            -d upstream_source=crates_io \
+            -d upstream_version=1.2.3 \
+            -d upstream_crate_versions=upstream-protocol=0.6.0 \
+            -d enable_upstream_advisories=false \
+            . "$dest"
+          if find "$dest" -name '*upstream_advisories*' | grep -q .; then
+            echo "::error::The advisory check's files were rendered with it off"
+            exit 1
+          fi
+          if grep -rq -e upstream-advisories -e check-upstream-advisories \
+              "$dest/Makefile" "$dest/.github/workflows" "$dest/CLAUDE.md"; then
+            echo "::error::The advisory check is still referenced with it off"
+            exit 1
+          fi
+          test -e "$RUNNER_TEMP/render-crates-io/scripts/check_upstream_advisories.dart"
+
       # A `.jinja` Python script is rendered rather than copied, so a Jinja
       # edit can produce a file that is no longer Python at all. Compiling is
       # the cheapest thing that notices.
@@ -239,10 +269,16 @@ jobs:
           dart pub get
           dart format scripts test/scripts
           dart analyze --fatal-infos test/scripts
-          dart test \
-            test/scripts/upstream_source_test.dart \
-            test/scripts/check_updates_test.dart \
-            test/scripts/common_test.dart \
-            test/scripts/release_test.dart \
-            test/scripts/update_changelog_test.dart \
+          tests=(
+            test/scripts/upstream_source_test.dart
+            test/scripts/check_updates_test.dart
+            test/scripts/common_test.dart
+            test/scripts/release_test.dart
+            test/scripts/update_changelog_test.dart
             test/scripts/update_template_test.dart
+          )
+          # Rendered only where there are upstream crates to check.
+          if [ -e test/scripts/upstream_advisories_test.dart ]; then
+            tests+=(test/scripts/upstream_advisories_test.dart)
+          fi
+          dart test "${tests[@]}"

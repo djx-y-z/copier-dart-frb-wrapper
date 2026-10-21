@@ -245,6 +245,9 @@ make verify-android-alignment     # Check built Android libraries are 16 KB-alig
 make verify-release-artifacts ARGS=<dir>  # Check release archives hold what their names say
 make actionlint                   # Lint the GitHub Actions workflows
 make check-new-{{ package_name }}-version  # Check for new upstream {{ native_library_name }} version
+{%- if enable_upstream_advisories and upstream_crates %}
+make check-upstream-advisories    # Check {{ native_repo }}'s published advisories against Cargo.lock
+{%- endif %}
 make check-new-{{ package_name }}-version ARGS="--update"  # Apply update
 make check-template-updates       # Check for copier template updates
 make update-template ARGS="--version vX.Y.Z"  # Apply a template update (runs copier)
@@ -521,6 +524,15 @@ described as our features.
   change of its own, to every label at once, and the Linux release build is
   the one to measure first: its image sets the oldest glibc a consumer needs
   (`build-{{ package_name }}.yml`)
+{%- if enable_upstream_advisories and upstream_crates %}
+- {{ native_repo }}'s own security advisories are read daily
+  (`make check-upstream-advisories`, a job of `check-{{ package_name }}-updates.yml`)
+  and held against the crates `rust/Cargo.lock` resolves. `make rust-audit`
+  reads RustSec and Dependabot reads GitHub's global database, and an advisory
+  an upstream publishes only in its own repository reaches neither until
+  someone files it there. A covered version, a range the check cannot read and
+  a fetch that failed all turn the run red; drafts are never asked for
+{%- endif %}
 
 ### Code Review Checklist
 1. No hardcoded keys or secrets
