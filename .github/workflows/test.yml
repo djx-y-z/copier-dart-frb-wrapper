@@ -276,6 +276,7 @@ jobs:
             test/scripts/release_test.dart
             test/scripts/update_changelog_test.dart
             test/scripts/update_template_test.dart
+            test/scripts/repo_protections_test.dart
           )
           # Rendered only where there are upstream crates to check.
           if [ -e test/scripts/upstream_advisories_test.dart ]; then
