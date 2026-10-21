@@ -244,4 +244,5 @@ jobs:
             test/scripts/check_updates_test.dart \
             test/scripts/common_test.dart \
             test/scripts/release_test.dart \
-            test/scripts/update_changelog_test.dart
+            test/scripts/update_changelog_test.dart \
+            test/scripts/update_template_test.dart
