@@ -217,8 +217,13 @@ make update-changelog ARGS="--version {{ upstream.example_pin('1.0.0') }}"
 ```
 
 The CI automatically checks for new {{ native_library_name }} releases daily and creates PRs with:
-- Updated `pubspec.yaml` and version badges
-- Updated `Cargo.lock` (if successful)
+{%- if upstream_crates %}
+- The new {{ upstream.pin_noun() }} in `rust/Cargo.toml`, the README badge, `CLAUDE.md` and
+  `.copier-answers.yml`
+{%- else %}
+- The new version in the README badge, `CLAUDE.md` and `.copier-answers.yml`
+{%- endif %}
+- Updated `Cargo.lock` and `THIRD_PARTY_NOTICES.txt` (if successful)
 - Regenerated FRB bindings (if successful)
 - AI-generated CHANGELOG entry, when `AI_MODELS` names a model with a key
   (see CONTRIBUTING); otherwise the pull request is labelled `changelog-needed`

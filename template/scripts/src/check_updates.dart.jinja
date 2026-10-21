@@ -178,7 +178,7 @@ String updateReadmeBadge(String readmeContent, String version) {
 {%- if upstream_crates %}
 /// Does NOT bump the `{{ crate_name }}` crate version: that is a deliberate
 /// release decision made later via `make release-frb` (which bumps the crate
-/// and pushes the `{{ crate_name }}-v*` tag that triggers the native build). See
+/// and pushes the `{{ crate_name }}-X.Y.Z` tag that triggers the native build). See
 /// the two-stage release flow in CLAUDE.md.
 ///
 {%- endif %}
