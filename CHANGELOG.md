@@ -1,3 +1,9 @@
+## [Unreleased]
+
+### Fixed
+
+- **`updateChangelog()` has its doc comment back** (`template/scripts/src/update_changelog.dart.jinja`) — 4.14.0 inserted `class ChangelogUpdate` between the function and the first two lines of its documentation, so the class's documentation opened with "Update CHANGELOG.md with a new … version entry." and the function's lost its summary. Each is where it belongs again.
+
 ## [4.17.0] - 2026-10-20
 
 ### Added

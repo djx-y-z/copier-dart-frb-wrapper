@@ -21,8 +21,6 @@ import 'ai_client.dart';
 import 'common.dart';
 import 'upstream_source.dart';
 
-/// Update CHANGELOG.md with a new {{ native_library_name }} version entry.
-///
 /// What [updateChangelog] reports back to its caller.
 ///
 /// Two facts, and both exist because only this run can observe them: which
@@ -57,6 +55,8 @@ String ciOutputsFor(ChangelogUpdate update) =>
     'ai_provider=${update.model}\n'
     'highlights_stacked=${update.highlightsStacked}\n';
 
+/// Update CHANGELOG.md with a new {{ native_library_name }} version entry.
+///
 /// Returns what the caller has to publish — see [ChangelogUpdate].
 Future<ChangelogUpdate> updateChangelog({
   required String version,
