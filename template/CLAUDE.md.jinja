@@ -248,6 +248,7 @@ make check-new-{{ package_name }}-version  # Check for new upstream {{ native_li
 make check-new-{{ package_name }}-version ARGS="--update"  # Apply update
 make check-template-updates       # Check for copier template updates
 make update-template ARGS="--version vX.Y.Z"  # Apply a template update (runs copier)
+make update-template ARGS="--version vX.Y.Z --data key=value"  # ...answering a question it adds
 make check-targets                # Check deployment targets (iOS/macOS/Android)
 make check-targets ARGS="--ios --set 14.0"  # Set iOS target everywhere
 make update-changelog ARGS="--version {{ upstream.example_pin('X.Y.Z') }}"  # Update CHANGELOG with AI
