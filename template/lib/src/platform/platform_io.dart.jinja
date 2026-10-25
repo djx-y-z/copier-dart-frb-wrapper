@@ -136,6 +136,11 @@ void countIsolateInLibrary(ExternalLibrary library) {
   );
 }
 
+/// Nothing to check on native platforms, which load no WASM module.
+// coverage:ignore-start
+Future<void> ensureWasmModuleServed(String moduleRoot) async {}
+// coverage:ignore-end
+
 /// This isolate's entry in the library's count; see [countIsolateInLibrary].
 _IsolateCount? _isolateCount;
 

@@ -112,11 +112,15 @@ class {{ package_name | to_camel }} {
   static Future<ExternalLibrary> _loadLibrary(String? customPath) async {
     // coverage:ignore-start
 {%- if enable_web %}
-    // On web, always use the default WASM loading
+    // On web, always use the default WASM loading — after making sure the
+    // module is there, since flutter_rust_bridge's loader waits forever for
+    // one that is not.
     if (platform.kIsWeb) {
-      return await loadExternalLibrary(
-        RustLib.kDefaultExternalLibraryLoaderConfig,
+      const config = RustLib.kDefaultExternalLibraryLoaderConfig;
+      await platform.ensureWasmModuleServed(
+        '${config.webPrefix ?? ''}${config.stem}',
       );
+      return await loadExternalLibrary(config);
     }
 {%- endif %}
     // coverage:ignore-end

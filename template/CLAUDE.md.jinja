@@ -138,14 +138,17 @@ revision, the entrypoint, the build mode and the output path — the target
 platform is **not** in that key — so a debug run for macOS and a debug run for
 Chrome share one `dart_build` stamp. Whichever ran first makes the other skip
 the build hook outright (`Skipping target: dart_build`, visible under
-`--verbose`), and `example/web/pkg/` is then never provisioned:
-`RustLib.init()` never completes: flutter_rust_bridge waits for the `load`
-event of `pkg/{{ crate_name }}.js` with no error path or timeout, so a missing
+`--verbose`), and `example/web/pkg/` is then never provisioned: `init()`
+throws a `StateError` naming the missing `pkg/{{ crate_name }}.js`. It checks
+for the module first because flutter_rust_bridge's loader waits for the
+`load` event of that script with no error path or timeout, so a missing
 module (a 404, or the app's HTML page the dev server serves in its place
-with a 200) leaves the call pending. The hook cannot
+with a 200) would leave the call pending. The hook cannot
 declare its way out of it — the skip happens above `hooks_runner`, where
-nothing it declares is read. Consumers of the published package hit the same
-thing; the README's *Known Limitations* names the escapes.
+nothing it declares is read. This is Flutter 3.38 to 3.41 only: from 3.44
+`flutter run` runs build hooks per target platform, outside that stamp.
+Consumers of the published package on those versions hit the same thing; the
+README's *Known Limitations* names the escapes.
 {% endif %}
 {% if forbidden_features %}
 **`make verify-feature-graph` reads the resolved graph, not the manifest.**
