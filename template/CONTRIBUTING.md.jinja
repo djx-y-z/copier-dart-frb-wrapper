@@ -227,6 +227,12 @@ The CI automatically checks for new {{ native_library_name }} releases daily and
   has a key — see [Setting up AI Changelog](#setting-up-ai-changelog) below.
   Without one the PR is still opened and labelled `changelog-needed`, and the
   entry is written by hand.
+- Saying, under *Merge without review?*, whether the update could be taken
+  unread: only version strings moved in the crates this package builds (read
+  off the upstream diff, so a protocol constant never passes), the FFI surface
+  held, and no other crate in `Cargo.lock` moved. Otherwise it names what
+  stands in the way. A report only — nothing merges on it yet, and a future
+  merge job would also need green checks and no agent commits.
 
 ### Manual Updates
 
