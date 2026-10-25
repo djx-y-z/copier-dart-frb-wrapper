@@ -85,7 +85,31 @@ in both directions with the content unchanged.
 rejected.** That is the intended answer rather than a regression, and it is what
 the first web build after adopting this looks like: run `make build-web`, or
 delete the directory to use the released module instead.
+{% endif %}
+⚠ **`make build` stamps the host library{% if enable_web %} the same way,{% endif %} in
+`rust/target/release/.crate-version`, and the hook refuses a local host
+library whose stamp is missing or disagrees** — the same `HookException`, for
+the same reason: a library left over from an earlier crate loads silently, and
+once the way values cross the bridge has moved, its calls fail in ways nothing
+names. Only `rust/target/release/` is read; a `--target` build lands in
+`rust/target/<triple>/`, is never read and gets no stamp. A library built
+before the stamp existed, or by a bare `cargo build`, is refused: run
+`make build`, or delete `rust/target/release/` to use the released library.
+So after `make release-frb` bumps the crate, `make test` needs a `make build`
+first.
 
+⚠ **Each stamp comes with `.cargo-lock`, a copy of the `rust/Cargo.lock` the
+build was made from, and the hook refuses a local build whose copy differs from
+the lock file in the tree.** An upstream update moves the dependencies while the
+crate version stays put — the crate moves at release time — so a build made
+before the update used to pass the version check and run the previous upstream
+code. After any change to the lock file, build again; a build from before the
+copy existed is refused the same way. `make build` also drops the hook's cached
+result for this package, `.dart_tool/hooks_runner/{{ package_name }}/`: when the
+hook last ran without a host build here, it downloaded the released library and
+declared only `rust/Cargo.toml`, so `dart test` kept loading that download after
+the build.
+{% if enable_web %}
 ### Web
 
 ```bash

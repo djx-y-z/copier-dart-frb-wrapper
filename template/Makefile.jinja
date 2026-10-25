@@ -342,6 +342,18 @@ build:
 # another crate version. A --target build lands in rust/target/<triple>/,
 # which the hook never reads, and gets no stamp.
 	$(if $(findstring --target,$(ARGS)),,@$(READ_CRATE_VERSION) > rust/target/release/.crate-version)
+# Keep a copy of the lock file the build was made from: an upstream update
+# moves the dependencies under an unchanged crate version, and the hook refuses
+# a build whose copy differs from rust/Cargo.lock.
+	$(if $(findstring --target,$(ARGS)),,@cp rust/Cargo.lock rust/target/release/.cargo-lock)
+# Drop the hook's cached result for this package, or the build may never be
+# used. When the hook last ran without a host build here it downloaded the
+# released library and declared only rust/Cargo.toml — it cannot declare a
+# library that does not exist yet, since hooks_runner re-runs a hook on every
+# build for a missing dependency — so nothing it watches changes now, and
+# `dart test` / `dart run` keep loading the download. The shared download
+# cache stays; Flutter's own dart_build stamp in an app is another matter.
+	$(if $(findstring --target,$(ARGS)),,@rm -rf .dart_tool/hooks_runner/{{ package_name }})
 	@echo ""
 	@echo "Build complete! Library at: rust/target/"
 
@@ -375,6 +387,9 @@ build-web:
 # names, which a patch release leaves unchanged while replacing the native
 # code behind them. The same first-`version` match the hook's own parser uses.
 	@$(READ_CRATE_VERSION) > rust/target/wasm32/.crate-version
+# And the lock file it was made from, which the hook compares with
+# rust/Cargo.lock: the dependencies move without the crate version.
+	@cp rust/Cargo.lock rust/target/wasm32/.cargo-lock
 	@echo ""
 	@echo "Build complete! WASM files at: rust/target/wasm32/ (crate $$(cat rust/target/wasm32/.crate-version))"
 
