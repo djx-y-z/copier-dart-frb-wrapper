@@ -1,3 +1,9 @@
+## [Unreleased]
+
+### Fixed
+
+- **An Apple library leaves room for the install name a consumer's tools write** (`template/rust/build.rs`, `template/scripts/verify_release_artifacts.py.jinja`, `template/CLAUDE.md.jinja`) — `dart run`, `dart test` and `flutter test` copy the dylib into the consuming project and rewrite its install name to the copy's absolute path with `install_name_tool -id`. cargo links with only the room the build machine's own path needed, so that rewrite failed — "larger updated load commands do not fit" — as soon as the copy's path was longer than about 180 characters. Measured in a generated project: its released libraries had room for 183 characters (macOS arm64, iOS simulator arm64) and 199 (both x86_64), the iOS device library happening to have 14,127, and a consumer whose copy landed at 186 characters failed under both `dart run` and `flutter test` while one at 183 passed. `rust/build.rs` now hands `-headerpad_max_install_names` to the cdylib's link on Apple targets: room for 3,255 characters, the library no larger, the same consumers passing at 186 and 400, and only the crate itself relinked. A build script rather than `rustflags` in `rust/.cargo/config.toml`, which `make build` never reads — it runs cargo from the repository root with `--manifest-path`, and cargo looks for its configuration from the working directory — and which a `RUSTFLAGS` in the environment replaces wholesale. `verify_release_artifacts.py` now also refuses a Mach-O library with room for fewer than 1,024 characters (MAXPATHLEN); over that project's last release it names exactly the four libraries above. Flutter app builds were never affected: they rename the library to a short `@rpath/` framework path. Consumers get the fix with a project's next native release.
+
 ## [4.18.0] - 2026-10-26
 
 ### Added
