@@ -152,6 +152,89 @@ jobs:
           fi
           test -e "$RUNNER_TEMP/render-crates-io/scripts/check_upstream_advisories.dart"
 
+      # The integration tests are off by default, so the renders above carry
+      # none of them. These two turn them on, with Web support and without:
+      # their web job, its make target and what the text says of it all depend
+      # on both answers.
+      - name: Render with the integration tests
+        run: |
+          set -euo pipefail
+          copier copy --trust --defaults --skip-tasks --vcs-ref=HEAD \
+            -d package_name=rendered_check \
+            -d description='A rendered smoke test' \
+            -d native_library_name=upstream \
+            -d github_repo=example/rendered_check \
+            -d native_repo=example/upstream \
+            -d enable_integration_tests=true \
+            . "$RUNNER_TEMP/render-integration"
+
+      - name: Render with the integration tests, without Web support
+        run: |
+          set -euo pipefail
+          copier copy --trust --defaults --skip-tasks --vcs-ref=HEAD \
+            -d package_name=rendered_check \
+            -d description='A rendered smoke test' \
+            -d native_library_name=upstream \
+            -d github_repo=example/rendered_check \
+            -d native_repo=example/upstream \
+            -d enable_web=false \
+            -d enable_integration_tests=true \
+            . "$RUNNER_TEMP/render-integration-noweb"
+
+      # Off, a project must not get a file of them, nor a target, a job or a
+      # gate that would need tests it does not have. On, it must get all of it.
+      - name: The integration tests are there only when asked for
+        run: |
+          set -euo pipefail
+          off="$RUNNER_TEMP/render-web"
+          on="$RUNNER_TEMP/render-integration"
+          noweb="$RUNNER_TEMP/render-integration-noweb"
+          files=(
+            .github/workflows/integration.yml
+            .github/workflows/integration-reusable.yml
+            .github/actions/setup-example/action.yml
+            example/integration_test/support/harness.dart
+            example/integration_test/rendered_check_test.dart
+            example/integration_test/capabilities/init.dart
+            example/test_driver/integration_test.dart
+            scripts/test_example_ci.dart
+            scripts/verify_example_coverage.dart
+            scripts/verify_example_library.dart
+            scripts/src/example_coverage.dart
+            scripts/src/example_coverage_policy.dart
+            scripts/src/example_library.dart
+            scripts/src/example_run.dart
+            scripts/src/release_integration.dart
+            test/scripts/example_coverage_test.dart
+            test/scripts/example_library_test.dart
+            test/scripts/example_run_test.dart
+            test/scripts/release_integration_test.dart
+          )
+          for f in "${files[@]}"; do
+            if [ -e "$off/$f" ]; then
+              echo "::error::$f was rendered with the integration tests off"
+              exit 1
+            fi
+            test -e "$on/$f" || { echo "::error::$f is missing with them on"; exit 1; }
+          done
+          if [ -e "$off/example" ]; then
+            echo "::error::example/ was rendered with the integration tests off"
+            exit 1
+          fi
+          if grep -rq -e test-example -e integration-reusable -e '"Integration Tests"' \
+              -e skip-integration-check -e example/integration_test \
+              "$off/Makefile" "$off/.github" "$off/scripts" "$off/.pubignore" "$off/CLAUDE.md"; then
+            echo "::error::The integration tests are still referenced with them off"
+            exit 1
+          fi
+          grep -q 'name: Integration (Web)' "$on/.github/workflows/integration-reusable.yml"
+          grep -q '^test-example-web:' "$on/Makefile"
+          if grep -q 'name: Integration (Web)' "$noweb/.github/workflows/integration-reusable.yml" ||
+              grep -q -e test-example-web -e build-web "$noweb/Makefile"; then
+            echo "::error::The web job or its targets are rendered without Web support"
+            exit 1
+          fi
+
       # A `.jinja` Python script is rendered rather than copied, so a Jinja
       # edit can produce a file that is no longer Python at all. Compiling is
       # the cheapest thing that notices.
@@ -222,6 +305,13 @@ jobs:
               -d upstream_source=crates_io
               -d upstream_version=1.2.3
               -d upstream_crate_versions=upstream-protocol=0.6.0
+          # The integration tests' scripts, off in the three above. On a
+          # git_tag render, the configuration of the project they came from.
+          - upstream: git_tag, integration tests
+            data: >-
+              -d upstream_crates=upstream-core,upstream-protocol
+              -d upstream_version=v1.2.3
+              -d enable_integration_tests=true
     steps:
       - uses: actions/checkout@v7
 
@@ -267,12 +357,31 @@ jobs:
           set -euo pipefail
           touch .skip_rendered_check_hook
           dart pub get
+          # The integration tests' scripts and tests, where they are rendered.
+          integration=()
+          for f in scripts/test_example_ci.dart scripts/verify_example_coverage.dart \
+              scripts/verify_example_library.dart scripts/src/example_coverage.dart \
+              scripts/src/example_coverage_policy.dart scripts/src/example_library.dart \
+              scripts/src/example_run.dart scripts/src/release_integration.dart \
+              test/scripts/example_coverage_test.dart test/scripts/example_library_test.dart \
+              test/scripts/example_run_test.dart test/scripts/release_integration_test.dart; do
+            if [ -e "$f" ]; then integration+=("$f"); fi
+          done
           # Before the line below formats anything. A render that is not
           # format-clean passes everything after it and then conflicts with the
           # formatted copy in every generated project, on every update.
-          dart format --output=none --set-exit-if-changed hook test/hook
+          dart format --output=none --set-exit-if-changed hook test/hook \
+            scripts/release.dart scripts/src/release.dart \
+            ${integration[@]+"${integration[@]}"}
           dart format scripts test/scripts
           dart analyze --fatal-infos test/scripts
+          # The command-line scripts no test imports. Errors and warnings fail
+          # here; their style is held to what the rest of scripts/ is held to,
+          # which analysis_options.yaml leaves out.
+          if [ -e scripts/test_example_ci.dart ]; then
+            dart analyze scripts/test_example_ci.dart \
+              scripts/verify_example_coverage.dart scripts/verify_example_library.dart
+          fi
           tests=(
             test/scripts/upstream_source_test.dart
             test/scripts/check_updates_test.dart
@@ -289,6 +398,13 @@ jobs:
           if [ -e test/scripts/upstream_advisories_test.dart ]; then
             tests+=(test/scripts/upstream_advisories_test.dart)
           fi
+          # Rendered only with the integration tests on.
+          for t in test/scripts/example_coverage_test.dart \
+              test/scripts/example_library_test.dart \
+              test/scripts/example_run_test.dart \
+              test/scripts/release_integration_test.dart; do
+            if [ -e "$t" ]; then tests+=("$t"); fi
+          done
           dart test "${tests[@]}"
 
       # The build hook against both sides of its `hooks`/`code_assets` range.

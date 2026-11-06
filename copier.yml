@@ -32,8 +32,17 @@ _jinja_extensions:
 # throw away the project's own version or raise a conflict on every release.
 # Absent from a destination it is recreated, so an existing project picks it up
 # on its next update.
+#
+# The same for the integration tests' own files (enable_integration_tests): the
+# entry point and its first family are a skeleton the project replaces with its
+# own tests, and the coverage policy holds its own excuses. The harness and the
+# driver next to them are the template's, and stay under its management: they
+# are the app's half of what CI judges a run by.
 _skip_if_exists:
   - ".github/agent-prompts/changelog-scope.md"
+  - "example/integration_test/{{ package_name }}_test.dart"
+  - "example/integration_test/capabilities/init.dart"
+  - "scripts/src/example_coverage_policy.dart"
 
 _exclude:
   - copier.yml
@@ -287,6 +296,27 @@ enable_fuzzing:
   type: bool
   help: "Include a cargo-fuzz harness (rust/fuzz/, Fuzz CI workflow, Makefile targets). Recommended for libraries that parse untrusted bytes."
   default: true
+
+# -----------------------------------------------------------------------------
+# Integration tests in the example app (optional)
+# -----------------------------------------------------------------------------
+# Off by default: the machinery holds a project to tests it has to write itself,
+# and without them `make coverage-example` and the `make release` gate would be
+# red from the first commit.
+enable_integration_tests:
+  type: bool
+  help: >-
+    Run the package inside the example Flutter app on every platform, in CI as
+    well: make test-example and the targets around it; integration.yml, on the
+    tree for every pull request, on the released binaries after each native
+    build and from pub.dev once a week; a watchdog that stops an app that has
+    hung; make coverage-example, which fails on a bridged function no test
+    calls; and a make release that will not tag until the tests have passed on
+    the stage-1 binaries. The tests themselves are the project's: an entry point
+    and one capability under example/integration_test/ are written once, as a
+    start. Turning it on later needs integration_test and flutter_driver in
+    example/pubspec.yaml's dev_dependencies.
+  default: false
 
 # -----------------------------------------------------------------------------
 # Claude Code support

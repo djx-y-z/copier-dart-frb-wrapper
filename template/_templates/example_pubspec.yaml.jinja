@@ -17,6 +17,26 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+{%- if enable_integration_tests %}
+{%- if enable_web %}
+  # `make test-example` and `make test-example-web`: this app, with the package
+  # in it, on each platform the package claims.
+{%- else %}
+  # `make test-example`: this app, with the package in it, on each platform the
+  # package claims.
+{%- endif %}
+  integration_test:
+    sdk: flutter
+{%- if enable_web %}
+  # What `flutter drive` needs. On the web it is the only way to run the tests
+  # above, and elsewhere it is the only way to run them in profile mode.
+{%- else %}
+  # What `flutter drive` needs: the only way to run the tests above in profile
+  # mode.
+{%- endif %}
+  flutter_driver:
+    sdk: flutter
+{%- endif %}
 
 flutter:
   uses-material-design: true

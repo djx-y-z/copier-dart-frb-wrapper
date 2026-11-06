@@ -55,6 +55,14 @@ example/macos/Runner.xcworkspace/
 # CLI example (not part of the Flutter plugin example)
 example_cli/
 
+{% if enable_integration_tests -%}
+# The example's own tests. They need this repository's Makefile and CI, and a
+# consumer reading the example on pub.dev reads example/lib/ for what to do.
+example/integration_test/
+example/test_driver/
+example/coverage/
+
+{% endif -%}
 {% if enable_web -%}
 # Downloaded WASM files (auto-downloaded by hook/build.dart)
 example/web/pkg/

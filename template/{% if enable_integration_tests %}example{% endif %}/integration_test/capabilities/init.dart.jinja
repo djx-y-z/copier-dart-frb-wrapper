@@ -1,0 +1,32 @@
+{#- Package imports sorted by URI, as `directives_ordering` wants them. -#}
+{%- if package_name < 'flutter_test' -%}
+import 'package:{{ package_name }}/{{ package_name }}.dart';
+import 'package:flutter_test/flutter_test.dart';
+{%- else -%}
+import 'package:flutter_test/flutter_test.dart';
+import 'package:{{ package_name }}/{{ package_name }}.dart';
+{%- endif %}
+
+import '../support/harness.dart';
+
+/// The package's own initialization, which every capability has run first.
+/// A family of capabilities is a function like this one, called from the entry
+/// point; add one per area of the package as it grows.
+void initCapabilities() {
+  group('{{ package_name | to_camel }}', () {
+    capability('init is idempotent and survives cleanup', () async {
+      expect({{ package_name | to_camel }}.isInitialized, isTrue);
+      await {{ package_name | to_camel }}.init();
+      {{ package_name | to_camel }}.ensureInitialized();
+      {{ package_name | to_camel }}Base.ensureInit();
+
+      {{ package_name | to_camel }}.cleanup();
+      expect({{ package_name | to_camel }}.isInitialized, isFalse);
+      expect({{ package_name | to_camel }}.ensureInitialized, throwsStateError);
+
+      // Without `dispose: true` the bridge stays up, so this comes back.
+      await {{ package_name | to_camel }}.init();
+      expect({{ package_name | to_camel }}.isInitialized, isTrue);
+    });
+  });
+}
