@@ -1,0 +1,38 @@
+// Every capability of the package, inside this running Flutter app.
+//
+// `test/` checks what the library does; it runs on the Dart VM, with a library
+// the VM found for itself. This checks that the same library gets there through
+// what a consumer's app goes through — the build hook, the platform's way of
+{%- if enable_web %}
+// bundling a native library, the loader, and on the web the wasm module — and
+// then does its job on that platform's architecture.
+{%- else %}
+// bundling a native library, the loader — and then does its job on that
+// platform's architecture.
+{%- endif %}
+//
+// One file, because every test file is its own build, install and launch on a
+// device. The families live under capabilities/, which is not named *_test.dart
+// so that `flutter test integration_test` does not take them for entry points.
+//
+//   make test-example ARGS="-d macos"      a desktop, a simulator or an emulator
+{%- if enable_web %}
+//   make test-example-web                  the web, in a real browser
+{%- endif %}
+//
+// When the package gains a capability, it goes here too:
+// `make verify-example-coverage` fails on a bridged function nothing here calls.
+//
+// This file and capabilities/ are this project's: the template wrote them once
+// and leaves them alone. support/harness.dart is the template's.
+import 'package:{{ package_name }}/{{ package_name }}.dart';
+
+import 'capabilities/init.dart';
+import 'support/harness.dart';
+
+void main() => declareCapabilities(
+  initialize: {{ package_name | to_camel }}.init,
+  capabilities: () {
+    initCapabilities();
+  },
+);

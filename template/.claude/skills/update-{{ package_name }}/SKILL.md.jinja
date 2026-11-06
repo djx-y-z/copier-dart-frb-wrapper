@@ -13,7 +13,16 @@ Guide for updating the {{ native_library_name }} native library version in this 
 
 ## Review Automated PR (Most Common)
 
+{%- if enable_integration_tests %}
+
+When the CI creates an automated PR for {{ native_library_name }} update, follow these steps. Its
+`Integration Tests` run says whether the new upstream code works inside a real app
+on every platform, built from the branch; a red leg there is the first thing to
+read, and `make test-example` reproduces it (see CLAUDE.md, *The example app*).
+{%- else %}
+
 When the CI creates an automated PR for {{ native_library_name }} update, follow these steps:
+{%- endif %}
 
 ### Step 1: Analyze Upstream Changes (IMPORTANT — go beyond release notes)
 

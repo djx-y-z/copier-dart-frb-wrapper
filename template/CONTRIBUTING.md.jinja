@@ -141,6 +141,37 @@ still be wrong here, and finding that out in review is expensive for you.
 ```bash
 make test
 ```
+{%- if enable_integration_tests %}
+
+### Testing in a real app
+
+`make test` runs the library on the Dart VM. The integration tests under
+`example/integration_test/` run it inside a Flutter app, on each platform the
+package claims, so they also go through the build hook, the platform's way of
+bundling a native library, and the loader. Build the library for what you are
+running on first, or the hook downloads the last release:
+
+```bash
+make build && make test-example ARGS="-d macos"
+
+make build-ios ARGS="--target aarch64-apple-ios-sim"
+make test-example ARGS="-d <simulator id>"
+
+make build-android ARGS="--target arm64-v8a"    # needs ANDROID_HOME and an NDK
+make test-example ARGS="-d <emulator id>"
+{%- if enable_web %}
+
+make build-web && make test-example-web CHROMEDRIVER=/path/to/chromedriver
+{%- endif %}
+```
+
+**A new function in `rust/src/api/` needs a test there too.** Add it under
+`capabilities/`, with `capability(...)` rather than `test(...)`.
+`make coverage-example ARGS="-d <device>"` measures every bridged function from the
+running app and fails on one nothing called, and CI runs it on every pull request.
+A function the tests are not meant to call goes in
+`scripts/src/example_coverage_policy.dart`, with the reason.
+{%- endif %}
 
 ### Code Formatting
 
@@ -207,6 +238,10 @@ reverts it, which turns a red build into a red build nobody can reproduce.
 - [ ] Formatting and analysis are clean (`make format-check`, `make analyze`)
 - [ ] Both documentation gates pass (`make doc`, `make rust-doc`)
 - [ ] Generated bindings are regenerated and committed, not hand-edited
+{%- if enable_integration_tests %}
+- [ ] A new function in `rust/src/api/` has a test in
+      `example/integration_test/capabilities/` (`make coverage-example`)
+{%- endif %}
 - [ ] CHANGELOG.md has an entry for anything a consumer can observe
 - [ ] New constraints, pins and caps carry a comment saying why
 - [ ] Commit messages describe the change and the reason for it
@@ -609,6 +644,16 @@ that cannot go stale. These are the ones a change usually needs:
 | `make codegen` | Regenerate the bindings under `lib/src/rust/` |
 | `make build` | Build the native library for this machine |
 | `make test` | Run the Dart test suite |
+{%- if enable_integration_tests %}
+| `make test-example` | Run the integration tests in the example app, on a device — see [Testing in a real app](#testing-in-a-real-app) |
+{%- if enable_web %}
+| `make test-example-web` | The same in a real browser (headless Chrome) |
+{%- endif %}
+| `make drive-example` | The same under `flutter drive`, for profile mode (AOT) |
+| `make coverage-example` | Run them, then fail on a bridged function none of them calls |
+| `make create-consumer` | Make a new app that depends on a published version |
+| `make package-example-android` / `-ios` / `-macos` | Build the release app for what CI cannot run, and check the library is in it |
+{%- endif %}
 | `make analyze` / `make format-check` | The two gates CI runs on every platform |
 | `make doc` / `make rust-doc` | The documentation gates — both BLOCK in CI |
 {%- if enable_web %}

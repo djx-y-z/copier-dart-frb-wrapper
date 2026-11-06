@@ -32,8 +32,17 @@ _jinja_extensions:
 # throw away the project's own version or raise a conflict on every release.
 # Absent from a destination it is recreated, so an existing project picks it up
 # on its next update.
+#
+# The same for the integration tests' own files (enable_integration_tests): the
+# entry point and its first family are a skeleton the project replaces with its
+# own tests, and the coverage policy holds its own excuses. The harness and the
+# driver next to them are the template's, and stay under its management: they
+# are the app's half of what CI judges a run by.
 _skip_if_exists:
   - ".github/agent-prompts/changelog-scope.md"
+  - "example/integration_test/{{ package_name }}_test.dart"
+  - "example/integration_test/capabilities/init.dart"
+  - "scripts/src/example_coverage_policy.dart"
 
 _exclude:
   - copier.yml
@@ -289,6 +298,27 @@ enable_fuzzing:
   default: true
 
 # -----------------------------------------------------------------------------
+# Integration tests in the example app (optional)
+# -----------------------------------------------------------------------------
+# Off by default: the machinery holds a project to tests it has to write itself,
+# and without them `make coverage-example` and the `make release` gate would be
+# red from the first commit.
+enable_integration_tests:
+  type: bool
+  help: >-
+    Run the package inside the example Flutter app on every platform, in CI as
+    well: make test-example and the targets around it; integration.yml, on the
+    tree for every pull request, on the released binaries after each native
+    build and from pub.dev once a week; a watchdog that stops an app that has
+    hung; make coverage-example, which fails on a bridged function no test
+    calls; and a make release that will not tag until the tests have passed on
+    the stage-1 binaries. The tests themselves are the project's: an entry point
+    and one capability under example/integration_test/ are written once, as a
+    start. Turning it on later needs integration_test and flutter_driver in
+    example/pubspec.yaml's dev_dependencies.
+  default: false
+
+# -----------------------------------------------------------------------------
 # Claude Code support
 # -----------------------------------------------------------------------------
 enable_claude:
@@ -519,6 +549,13 @@ _message_after_copy: |
 
   12. Write tests in test/ directory
       See test/{{ package_name }}_test.dart for template
+  {%- if enable_integration_tests %}
+      And in example/integration_test/, which runs the package inside the
+      example app: it has an entry point and one capability to start from.
+      make coverage-example fails on a bridged function no test there calls;
+      the excuses go in scripts/src/example_coverage_policy.dart.
+        make build && make test-example ARGS="-d macos"
+  {%- endif %}
 
   13. Customize package metadata:
       - Update topics in pubspec.yaml if needed
@@ -575,3 +612,11 @@ _message_after_update: |
   states what this package binds and exposes, every automatic CHANGELOG entry is
   classified against it, and no later update will overwrite it — so the generic
   version it arrives with is the version it keeps until you replace it.
+  {%- if enable_integration_tests %}
+
+  With enable_integration_tests on, example/pubspec.yaml needs integration_test
+  and flutter_driver (both `sdk: flutter`) in its dev_dependencies: the example
+  is this project's own, so an update cannot add them there. The update that
+  turns them on writes an entry point and one capability to start from, where
+  example/integration_test/ has none of its own yet.
+  {%- endif %}
