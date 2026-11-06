@@ -549,6 +549,13 @@ _message_after_copy: |
 
   12. Write tests in test/ directory
       See test/{{ package_name }}_test.dart for template
+  {%- if enable_integration_tests %}
+      And in example/integration_test/, which runs the package inside the
+      example app: it has an entry point and one capability to start from.
+      make coverage-example fails on a bridged function no test there calls;
+      the excuses go in scripts/src/example_coverage_policy.dart.
+        make build && make test-example ARGS="-d macos"
+  {%- endif %}
 
   13. Customize package metadata:
       - Update topics in pubspec.yaml if needed
@@ -605,3 +612,11 @@ _message_after_update: |
   states what this package binds and exposes, every automatic CHANGELOG entry is
   classified against it, and no later update will overwrite it — so the generic
   version it arrives with is the version it keeps until you replace it.
+  {%- if enable_integration_tests %}
+
+  With enable_integration_tests on, example/pubspec.yaml needs integration_test
+  and flutter_driver (both `sdk: flutter`) in its dev_dependencies: the example
+  is this project's own, so an update cannot add them there. The update that
+  turns them on writes an entry point and one capability to start from, where
+  example/integration_test/ has none of its own yet.
+  {%- endif %}

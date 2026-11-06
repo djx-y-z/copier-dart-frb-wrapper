@@ -105,7 +105,14 @@ prefer the more severe bump.
 
 1. Watch the build: `gh run watch` (or the Actions tab). It creates the GitHub
    Release `{{ crate_name }}-<version>` with all platform archives.
+{%- if enable_integration_tests %}
+2. `Integration Tests` then starts by itself on the released binaries, titled
+   `Released binaries of {{ crate_name }}-<version>`, and runs the package in a real
+   app on every platform. `make release` will not tag before it has passed.
+3. Only then proceed to **stage 2** — the Dart package release
+{%- else %}
 2. Only then proceed to **stage 2** — the Dart package release
+{%- endif %}
    ([release-package](../release-package/SKILL.md)): bump `pubspec.yaml`,
    finalize the CHANGELOG `[Unreleased]` → `[X.Y.Z]`, tag `vX.Y.Z`, push.
 
