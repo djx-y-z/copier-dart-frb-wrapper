@@ -59,15 +59,19 @@ copier-dart-frb-wrapper/
 | `rust_edition` | string | `2024` | Rust edition (2021 or 2024) |
 | `rust_version` | string | `1.88` | Minimum Rust version (MSRV) |
 | `frb_version` | string | `2.13.0` | Flutter Rust Bridge version |
+| `forbidden_features` | string | `` | Cargo features banned from the shipped graph, `crate=feat1,feat2;crate2=feat3`; empty renders no gate |
 | `enable_web` | boolean | `true` | Enable Web/WASM support |
+| `enable_freezed` | boolean | `true` | Add freezed (only data-carrying enums or structs need it) |
 | `enable_protoc` | boolean | `false` | Enable Protocol Buffers support (install protoc in setup/CI) |
 | `enable_fuzzing` | boolean | `true` | Include a cargo-fuzz harness (rust/fuzz/, Fuzz CI, Makefile targets) |
+| `enable_integration_tests` | boolean | `false` | The package inside the example app on every platform, in CI too: `*-example` targets, `integration.yml`, coverage and release gates; the tests are the project's |
 | `enable_claude` | boolean | `true` | Include Claude Code files |
 | `upstream_crates` | string | `` | Upstream Rust crates (comma-separated); the first is the primary one |
 | `upstream_source` | enum | `git_tag` | Where they come from: `git_tag` (a tag of `native_repo`) or `crates_io` (the registry) |
 | `upstream_version` | string | `` | The pin: the tag with `git_tag`, the primary crate's exact version with `crates_io` |
 | `version_tag_prefix` | string | `v` | Tag prefix for version normalization (`git_tag` only) |
 | `upstream_crate_versions` | string | `` | `crates_io` with several crates: `crate=X.Y.Z,...`, the requirement on each crate after the first |
+| `enable_upstream_advisories` | boolean | `true` | Daily check of `native_repo`'s security advisories against the locked upstream crates (with `upstream_crates` only) |
 | `flutter_version` | string | `3.38.4` | Flutter version for FVM |
 | `dart_sdk_version` | string | `^3.10.0` | Dart SDK version constraint |
 | `flutter_sdk_version` | string | `>=3.38.0` | Flutter SDK version constraint |
