@@ -1,3 +1,17 @@
+## [Unreleased]
+
+### Changed
+
+- **The build hook waits longer for GitHub** (`template/hook/build.dart.jinja`, `template/test/hook/build_hook_test.dart.jinja`, `template/SECURITY.md.jinja`) — the native library and its checksums file are each tried six times, after pauses of 2, 4, 8, 16 and 30 seconds, where three tries used to span six seconds of pauses: a runner's DNS has been seen failing for longer than that. An attempt waits at most 20 seconds to connect, rather than the operating system's minute or two. Only a network failure and a 5xx or 429 answer are tried again; a 404 and any other answer still fail at once, and so does a file the hook cannot write, which no other try can fix and which the message no longer blames on the network. A 200 that is not a checksums file — a proxy's or a captive portal's page — is reported as that, not as an incomplete release. `downloadWithRetry` and `resolveExpectedChecksum` are public so that their tests can run them against a server on the machine: a retry after a 5xx that succeeds, a 404, six failed attempts, an unwritable file, a matching entry, a missing one, a page that is not a checksums file and a file that cannot be had. Ported from a generated project, where it shipped first.
+
+### Fixed
+
+- **The template's CI analyzes the build hook it claims to** (`.github/workflows/test.yml`, `template/hook/build.dart.jinja`, `template/test/hook/build_hook_test.dart.jinja`) — `dart analyze --fatal-infos hook/` analyzed nothing: `analysis_options.yaml` excludes `hook/**`, and `dart analyze` honours that for a directory it is given. Measured: it printed "No issues found!" over a type error put in the hook on purpose. The step names `hook/build.dart` now, under both majors of `hooks` it admits, and the one finding it had been hiding is fixed (an unnecessary interpolation on the web path). The hook's own tests run in `rendered-scripts` too, and the hook and its test are checked format-clean before anything there formats them: the test's `UNSTAMPED` case was not, so every generated project's `make format` rewrapped it and every update conflicted with that.
+
+### Security
+
+- **The build hook's checksum check has no override** (`template/hook/build.dart.jinja`, `template/test/hook/build_hook_test.dart.jinja`, `template/SECURITY.md.jinja`) — `<PACKAGE>_ALLOW_UNVERIFIED_DOWNLOAD` is gone from the hook, from its error messages and from SECURITY.md. It never took effect: Dart's and Flutter's hook runners give a hook only a fixed list of environment variables (a probe hook on Dart 3.10.3 saw `HOME`, `PATH` and `TMPDIR`), so the hook never saw it, and the messages that told users to set it sent them nowhere. The case it was for, a release with no checksums file, is not one the hook downloads: it fetches only the release of its own crate version, and the build workflow publishes the file with every one. A test keeps any reading of `Platform.environment` out of the hook.
+
 ## [4.19.0] - 2026-10-26
 
 ### Fixed

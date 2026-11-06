@@ -267,6 +267,10 @@ jobs:
           set -euo pipefail
           touch .skip_rendered_check_hook
           dart pub get
+          # Before the line below formats anything. A render that is not
+          # format-clean passes everything after it and then conflicts with the
+          # formatted copy in every generated project, on every update.
+          dart format --output=none --set-exit-if-changed hook test/hook
           dart format scripts test/scripts
           dart analyze --fatal-infos test/scripts
           tests=(
@@ -279,6 +283,7 @@ jobs:
             test/scripts/repo_protections_test.dart
             test/scripts/msrv_test.dart
             test/scripts/ai_client_test.dart
+            test/hook/build_hook_test.dart
           )
           # Rendered only where there are upstream crates to check.
           if [ -e test/scripts/upstream_advisories_test.dart ]; then
@@ -292,13 +297,18 @@ jobs:
       # `meta` below what hooks >= 2.1.0 needs, gets hooks 2.0.x with
       # code_assets 1.x, which nothing else here compiles. The override pins
       # the set measured on 3.38.4.
+      #
+      # ⚠ The file, not the directory. analysis_options.yaml excludes `hook/**`,
+      # and `dart analyze` honours that for a directory it is given: measured,
+      # `dart analyze --fatal-infos hook/` printed "No issues found!" over a type
+      # error. A file named on the command line is analyzed regardless.
       - name: Analyze the build hook against both majors it admits
         working-directory: ${{ runner.temp }}/render
         run: |
           set -euo pipefail
-          dart analyze --fatal-infos hook/
+          dart analyze --fatal-infos hook/build.dart
           printf 'dependency_overrides:\n  hooks: 2.0.2\n  code_assets: 1.2.1\n' \
             > pubspec_overrides.yaml
           dart pub get
           grep -A2 -E '^  (hooks|code_assets):$' pubspec.lock
-          dart analyze --fatal-infos hook/
+          dart analyze --fatal-infos hook/build.dart
