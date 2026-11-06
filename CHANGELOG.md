@@ -19,6 +19,8 @@
 
 ### Fixed
 
+- **The README and CLAUDE.md list every copier question** (`README.md`, `CLAUDE.md`) — their tables had no row for `enable_integration_tests`, nor for three questions added earlier: `enable_freezed`, `enable_upstream_advisories` and `forbidden_features`. Each now has one, with its default and what it changes.
+
 - **The template's CI analyzes the build hook it claims to** (`.github/workflows/test.yml`, `template/hook/build.dart.jinja`, `template/test/hook/build_hook_test.dart.jinja`) — `dart analyze --fatal-infos hook/` analyzed nothing: `analysis_options.yaml` excludes `hook/**`, and `dart analyze` honours that for a directory it is given. Measured: it printed "No issues found!" over a type error put in the hook on purpose. The step names `hook/build.dart` now, under both majors of `hooks` it admits, and the one finding it had been hiding is fixed (an unnecessary interpolation on the web path). The hook's own tests run in `rendered-scripts` too, and the hook and its test are checked format-clean before anything there formats them: the test's `UNSTAMPED` case was not, so every generated project's `make format` rewrapped it and every update conflicted with that.
 
 ### Security

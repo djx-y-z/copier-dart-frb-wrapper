@@ -133,6 +133,7 @@ copier copy https://github.com/djx-y-z/copier-dart-frb-wrapper . \
 | `rust_edition` | Rust edition (2021 or 2024) | `2024` | `2021` |
 | `rust_version` | Minimum Rust version (MSRV) | `1.88` | `1.75` |
 | `frb_version` | Flutter Rust Bridge version | `2.13.0` | `2.10.0` |
+| `forbidden_features` | Cargo features that must never be enabled in the shipped dependency graph, keyed by crate; empty renders no gate | `` | `some-crate=test-utils,backtrace` |
 
 ### Upstream Crate (optional)
 
@@ -143,6 +144,7 @@ copier copy https://github.com/djx-y-z/copier-dart-frb-wrapper . \
 | `upstream_version` | The pin: the tag with `git_tag`, the primary crate's exact crates.io version with `crates_io` | `` | `v0.86.0`, or `0.86.0` with `crates_io` |
 | `version_tag_prefix` | Tag prefix for upstream version tags (used for version normalization; `git_tag` only) | `v` | `release-v` |
 | `upstream_crate_versions` | `crates_io` with several crates: the requirement on each crate after the first, as the primary crate's release declares it | `` | `libsignal-core=0.6.0` |
+| `enable_upstream_advisories` | Check `native_repo`'s published security advisories against the upstream crates `rust/Cargo.lock` resolves, daily (`make check-upstream-advisories`); asked only with `upstream_crates` | `true` | `false` |
 
 ### Flutter/Dart Configuration
 
@@ -153,7 +155,9 @@ copier copy https://github.com/djx-y-z/copier-dart-frb-wrapper . \
 | `flutter_sdk_version` | Flutter SDK version constraint | `>=3.38.0` | `>=3.35.0` |
 | `enable_web` | Enable Web/WASM support | `true` | `false` |
 | `enable_protoc` | Enable Protocol Buffers support (install protoc in setup/CI) | `false` | `true` |
+| `enable_freezed` | Add freezed, which flutter_rust_bridge needs only for data-carrying enums or structs it renders as sealed classes | `true` | `false` |
 | `enable_fuzzing` | Include a cargo-fuzz harness (rust/fuzz/, Fuzz CI, Makefile targets) | `true` | `false` |
+| `enable_integration_tests` | Run the package inside the example app on every platform, in CI as well: the `*-example` targets, `integration.yml`, the coverage gate and the `make release` gate. The tests are the project's; off by default, since without them those gates are red | `false` | `true` |
 | `enable_claude` | Include Claude Code files (CLAUDE.md, .claude/skills/) | `true` | `false` |
 
 ### iOS / macOS Configuration
