@@ -3,10 +3,12 @@
 This file is pasted into the prompt that writes the CHANGELOG entry for an
 upstream dependency bump (`make update-changelog`, and the automatic update pull
 request). It is the list that entry is classified against: an upstream change
-that cannot be tied to something named here is invisible to this package's
-users, and saying otherwise turns somebody else's release notes into a list of
-features this package does not have. That is the single most common way this
-step goes wrong.
+that cannot be tied to something named here gets no bullet of its own, and
+giving it one turns somebody else's release notes into a list of features this
+package does not have. That is the single most common way this step goes wrong.
+The opposite mistake is the quieter one: a change inside a crate you bind,
+dismissed because its name is not here, when an item that is here runs through
+it — a cipher under every message, an encoder under a display string.
 
 **This file is yours, not the template's.** The template writes it once and never
 overwrites it (`_skip_if_exists`), so `copier update` will not touch your edits
@@ -53,10 +55,19 @@ about, one level up. Commands for whoever finishes the pull request belong in
 {% else -%}
 - Crates bound: (list the upstream crates this package builds)
 {% endif -%}
-- Exposed surface: (list what `lib/` actually re-exports — the types, the
-  operations and the serialization callers can reach. Replace this line: until
-  you do, every upstream change looks in scope, which is the failure this file
-  exists to prevent.)
+- Exposed surface: (list what `lib/` actually re-exports — every type and
+  operation callers can reach, by name, and the serialization. Replace this
+  line: until you do, every upstream change looks in scope, which is the
+  failure this file exists to prevent. A type you leave out is one whose
+  upstream changes the entry will treat as nobody's.)
+
+(Then map the upstream files those items run through: "`foo.rs` is `Foo`",
+"`cipher.rs` is what every message is encrypted with". Nothing the prompt is
+given shows callers, so it calls a changed body out of reach only where this
+file names that body's file as out of reach, and it can tie a change to the
+item it serves only where this map names the file. Say which files are known
+to be out of reach, and that a file missing from the map is not thereby out of
+reach: upstream adds and renames them.)
 
 ## Not bound or exposed
 
