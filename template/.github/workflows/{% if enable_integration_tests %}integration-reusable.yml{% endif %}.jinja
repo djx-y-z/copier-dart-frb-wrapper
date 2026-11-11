@@ -150,7 +150,7 @@ jobs:
     # Setup, a cold Rust build on Windows included, then two test steps of 30.
     timeout-minutes: 90
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{"{{"}} inputs.ref {{"}}"}}
 
@@ -243,7 +243,7 @@ jobs:
     # Setup, a cold wasm build included, then two test steps of 15.
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{"{{"}} inputs.ref {{"}}"}}
 
@@ -333,7 +333,7 @@ jobs:
     # it all.
     timeout-minutes: 100
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{"{{"}} inputs.ref {{"}}"}}
 
@@ -477,7 +477,7 @@ jobs:
       HANG_TEST: ${{"{{"}} inputs.hang && !matrix.profile && '--dart-define={{ package_name | upper }}_EXAMPLE_HANG=true' || '' {{"}}"}}
       HANG_DRIVE: ${{"{{"}} inputs.hang && matrix.profile && '--dart-define={{ package_name | upper }}_EXAMPLE_HANG=true' || '' {{"}}"}}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{"{{"}} inputs.ref {{"}}"}}
 
@@ -725,7 +725,7 @@ jobs:
     # Setup, then the build step's 60, which has room for its three tries.
     timeout-minutes: 80
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{"{{"}} inputs.ref {{"}}"}}
 
