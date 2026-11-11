@@ -492,8 +492,8 @@ flutter --version
 
 For Web/WASM support:
 ```bash
-# Install wasm-pack
-cargo install wasm-pack
+# Install the pinned wasm-pack (WASM_PACK_VERSION in the Makefile)
+make setup-web
 
 # Build WASM
 make build-web
