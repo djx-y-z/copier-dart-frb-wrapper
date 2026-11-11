@@ -16,6 +16,8 @@
 
 - **A web app's build no longer runs the build hook every time** (`template/hook/build.dart.jinja`, `template/Makefile.jinja`) — the hook declared the files of a local WebAssembly build as its inputs whether they existed or not, and a missing input counts as changed: in an app that gets the package from pub.dev, which has no `rust/target/`, every web build ran Flutter's `dart_build` step and the hook again (measured on Flutter 3.38.4: "dart_build: Starting due to … inputs were missing: …/rust/target/wasm32/.cargo-lock"). It now declares them only while they exist (`existingLocalWasmBuildFiles`), and `make build-web` drops the hook's cached results, as `make build` does, so a local build made afterwards is still picked up. The tests of both are rendered only with `enable_web`, beside the code they test.
 
+- **Windows on Arm gets a build error instead of a library it cannot load** (`template/hook/build.dart.jinja`) — only x86_64 is released for Windows, and the hook handed that library to every Windows architecture. Flutter builds an arm64 app on Windows on Arm (`flutter_tools`' native-assets targets map `windows_arm64` to `Architecture.arm64`), so the build passed and the app could not load the library at its first call. The hook now refuses a Windows architecture other than x86_64 ("Unsupported Windows architecture"), as it already refused an architecture with no release on the other systems; `localBuildDirectory` already had no directory for one. Found by an independent review of a generated project's hook before its release; read from the code, not run on a Windows on Arm machine.
+
 ## [4.20.0] - 2026-11-06
 
 ### Added
