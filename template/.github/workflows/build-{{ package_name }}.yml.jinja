@@ -439,8 +439,11 @@ jobs:
         with:
           targets: wasm32-unknown-unknown
 
+      # The version the Makefile pins (WASM_PACK_VERSION), from its own lock
+      # file: wasm-pack runs wasm-opt over the module this job ships, and an
+      # unpinned install took whatever its dependencies resolved to that day.
       - name: Install wasm-pack
-        run: cargo install wasm-pack
+        run: make setup-web
 {%- if enable_protoc %}
 
       - name: Setup Protoc
