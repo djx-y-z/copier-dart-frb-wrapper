@@ -323,6 +323,17 @@ when the app answers, so keep `writeResponseOnFailure` in
 a test's failure too: a slow emulator can turn one red, and that is the side to
 err on.
 
+⚠ **A run that has not started a test 5 minutes after the app was built did not
+finish, and is ended there** (`launchLimit`, from the line flutter prints, `Xcode
+build done.` or `✓ Built build/…`; `startLimit`, 20 minutes from the run's start,
+when that line never comes). Measured over 204 runs in CI: the first test came 3
+to 13 seconds after that line on an emulator and 10 to 95 on a simulator, and the
+17 runs that never got there stood still after it — iOS apps that never
+connected until flutter gave up 12 minutes on, installs that hung until the
+step's limit, once for 54 minutes. A first run on a fresh simulator takes up to 9
+minutes to its first test, nearly all of it the build, which is why the limit
+counts from the build's end.
+
 ⚠ **A hang in the app fails the run after 8 minutes, and the watchdog behind it is
 the host's, not the app's.** Both of a test's own limits, the 3 minutes and the
 6-minute backstop, are timers of the app's isolate, and a call that blocks the
