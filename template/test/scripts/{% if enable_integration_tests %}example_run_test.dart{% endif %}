@@ -996,6 +996,45 @@ $_start$_loaded{"testID":1,"error":"Failed to load \\"/repo/example/integration_
       );
     });
   });
+
+  group('when a pull request or main runs them', () {
+    final workflow = _readLf('.github/workflows/integration.yml');
+
+    /// The paths under [trigger], the lines that open it given in full.
+    List<String> paths(String trigger) {
+      final start = workflow.indexOf('$trigger\n    paths:\n');
+      expect(start, isNot(-1), reason: 'no paths under $trigger');
+      final list = <String>[];
+      for (final line
+          in workflow.substring(start + trigger.length).split('\n').skip(2)) {
+        if (line.startsWith('      #')) continue;
+        final path = RegExp(r"^      - '(.+)'$").firstMatch(line)?.group(1);
+        if (path == null) break;
+        list.add(path);
+      }
+      return list;
+    }
+
+    test('a pull request and a push to main run on the same paths', () {
+      final pullRequest = paths('  pull_request:');
+      expect(pullRequest, paths('  push:\n    branches: [main]'));
+      // What the jobs build, what they run, and what tells them how.
+      expect(
+        pullRequest,
+        containsAll([
+          'hook/**',
+          'lib/**',
+          'rust/**',
+          'example/**',
+          'scripts/**',
+          'Makefile',
+          '.copier-answers.yml',
+          '.github/workflows/integration*.yml',
+          '.github/actions/**',
+        ]),
+      );
+    });
+  });
 }
 
 /// A workflow's text with LF line ends. On Windows git checks the workflows out

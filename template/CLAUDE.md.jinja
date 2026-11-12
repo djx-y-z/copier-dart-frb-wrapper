@@ -285,8 +285,9 @@ in a loop with a deadline instead, under
 opaque type by value, not by reference, disposes the Dart object it is given, and
 the next use throws `DroppableDisposedException`. Pass a clone or use it last.
 
-**CI:** `integration.yml` runs `integration-reusable.yml` on every pull request and
-push to main (from the tree), after the native build of a release tag (on the
+**CI:** `integration.yml` runs `integration-reusable.yml` on pull requests and
+pushes to main that change what it reads (from the tree; the paths are in
+`integration.yml`), after the native build of a release tag (on the
 released binaries), and weekly (from pub.dev, on the newest Flutter, with the
 tests of that version's tag; a version whose tag has none is not run).
 `make release` will not tag before
