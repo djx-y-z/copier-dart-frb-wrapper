@@ -1,3 +1,9 @@
+## [Unreleased]
+
+### Fixed
+
+- **A new app on a version just uploaded waits until `pub` can resolve that version** (`template/.github/actions/{% if enable_integration_tests %}setup-example{% endif %}/action.yml.jinja`) — `publish.yml`'s `verify-published` and `verify-published-on-stable` jobs create an app that depends on the version just uploaded, and waited for it on the version's own page, `https://pub.dev/api/packages/<name>/versions/<version>`, which answers as soon as the version exists. `pub` resolves against the package's version listing, `https://pub.dev/api/packages/<name>`, which pub.dev's CDN keeps for up to two minutes (`cache-control: public, max-age=120`). So the wait passed, and `flutter pub add` failed with "doesn't match any versions": in a generated project's release, in 3 of the 22 jobs, 68, 92 and 149 seconds after the upload, while the others went on. The wait now reads the listing, asked for the way pub asks for it, until the listing names the version. Each CDN node keeps its own copy, so the step that creates the app also tries again on that one message, six times 30 seconds apart; any other failure still stops it at once. Checked against pub.dev, where the wait returns at once for a published version and takes neither an absent version nor a prefix of one for it, and against a stand-in `make` that fails twice with that message, fails with another one, and keeps failing.
+
 ## [4.21.0] - 2026-11-11
 
 ### Added
